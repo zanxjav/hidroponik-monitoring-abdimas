@@ -1,243 +1,247 @@
 /**
- * Smart Hydroponic Monitoring System - Dashboard Abdimas
- * Core Logic: SVG Dial Gauges, Chart.js Telemetry, Real-time Simulation & IoT Hooks
+ * Smart Hydroponic Monitoring System - Mobile Dashboard Engine
+ * Dioptimalkan untuk Smartphone & Interaksi Sentuh
  */
 
 document.addEventListener('DOMContentLoaded', () => {
-  // --- Constants & Config ---
-  const ARC_TOTAL_LENGTH = 235.62; // PI * 75 (radius of SVG arc)
+  const ARC_TOTAL = 235.62; // PI * 75
 
-  // Sensor ranges for hydroponic vegetables (e.g., lettuce/pakcoy)
-  const PARAM_RANGES = {
+  // Ambang batas parameter hidroponik
+  const RANGES = {
     airTemp: { min: 0, max: 50, idealMin: 22, idealMax: 28 },
     humidity: { min: 0, max: 100, idealMin: 60, idealMax: 80 },
     waterTemp: { min: 0, max: 45, idealMin: 18, idealMax: 25 },
   };
 
-  // State Management
+  // State
   const state = {
     airTemp: 26.4,
     humidity: 68.2,
     waterTemp: 23.8,
     isSimulating: true,
     history: [],
-    maxHistoryPoints: 25,
+    maxPoints: 20,
+    currentTab: 'all',
   };
 
-  // DOM Elements - Gauges
-  const elements = {
-    // Air Temp
+  // DOM Elements
+  const els = {
+    // Live header
+    liveClock: document.getElementById('liveClock'),
+    livePill: document.getElementById('livePill'),
+    liveText: document.getElementById('liveText'),
+
+    // Eco Banner
+    ecoBanner: document.getElementById('ecoBanner'),
+    ecoIcon: document.getElementById('ecoIcon'),
+    ecoTitle: document.getElementById('ecoTitle'),
+    ecoDesc: document.getElementById('ecoDesc'),
+
+    // Dials - Air Temp
     fillAirTemp: document.getElementById('fillAirTemp'),
     needleAirTemp: document.getElementById('needleAirTemp'),
     valAirTemp: document.getElementById('valAirTemp'),
     badgeAirTemp: document.getElementById('badgeAirTemp'),
+    hintAirTemp: document.getElementById('hintAirTemp'),
 
-    // Humidity
+    // Dials - Humidity
     fillHumidity: document.getElementById('fillHumidity'),
     needleHumidity: document.getElementById('needleHumidity'),
     valHumidity: document.getElementById('valHumidity'),
     badgeHumidity: document.getElementById('badgeHumidity'),
+    hintHumidity: document.getElementById('hintHumidity'),
 
-    // Water Temp
+    // Dials - Water Temp
     fillWaterTemp: document.getElementById('fillWaterTemp'),
     needleWaterTemp: document.getElementById('needleWaterTemp'),
     valWaterTemp: document.getElementById('valWaterTemp'),
     badgeWaterTemp: document.getElementById('badgeWaterTemp'),
+    hintWaterTemp: document.getElementById('hintWaterTemp'),
 
-    // Summaries
+    // Mini Stats
     avgAirTemp: document.getElementById('avgAirTemp'),
     avgHumidity: document.getElementById('avgHumidity'),
     avgWaterTemp: document.getElementById('avgWaterTemp'),
-    ecoStatus: document.getElementById('ecoStatus'),
 
-    // Header & Controls
-    liveClock: document.getElementById('liveClock'),
+    // Mobile Bottom Actions
     btnSimToggle: document.getElementById('btnSimToggle'),
     simIcon: document.getElementById('simIcon'),
     simBtnText: document.getElementById('simBtnText'),
-    connectionStatusText: document.getElementById('connectionStatusText'),
-
-    // Modal
-    settingsModal: document.getElementById('settingsModal'),
+    btnOpenManual: document.getElementById('btnOpenManual'),
     btnSettings: document.getElementById('btnSettings'),
-    btnCloseModal: document.getElementById('btnCloseModal'),
-    btnCloseModalBtn: document.getElementById('btnCloseModalBtn'),
-    radioSim: document.getElementById('radioSim'),
-    radioManual: document.getElementById('radioManual'),
-    manualInputSection: document.getElementById('manualInputSection'),
-    btnApplyManual: document.getElementById('btnApplyManual'),
-    inputAirTemp: document.getElementById('inputAirTemp'),
-    inputHumidity: document.getElementById('inputHumidity'),
-    inputWaterTemp: document.getElementById('inputWaterTemp'),
 
-    // Chart actions
+    // Modal Sheet
+    settingsModal: document.getElementById('settingsModal'),
+    btnCloseModal: document.getElementById('btnCloseModal'),
+    optAutoSim: document.getElementById('optAutoSim'),
+    optManual: document.getElementById('optManual'),
+    sliderAir: document.getElementById('sliderAir'),
+    sliderAirVal: document.getElementById('sliderAirVal'),
+    sliderHum: document.getElementById('sliderHum'),
+    sliderHumVal: document.getElementById('sliderHumVal'),
+    sliderWater: document.getElementById('sliderWater'),
+    sliderWaterVal: document.getElementById('sliderWaterVal'),
+    btnApplyManual: document.getElementById('btnApplyManual'),
+
+    // Chart & Tools
     btnExportCSV: document.getElementById('btnExportCSV'),
     btnResetChart: document.getElementById('btnResetChart'),
     toggleAirTemp: document.getElementById('toggleAirTemp'),
     toggleHumidity: document.getElementById('toggleHumidity'),
     toggleWaterTemp: document.getElementById('toggleWaterTemp'),
+    tabButtons: document.querySelectorAll('.tab-btn'),
+    cards: document.querySelectorAll('.mobile-dial-card'),
   };
 
   // --- Clock Updater ---
   function updateClock() {
     const now = new Date();
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    const seconds = String(now.getSeconds()).padStart(2, '0');
-    if (elements.liveClock) {
-      elements.liveClock.textContent = `${hours}:${minutes}:${seconds} WIB`;
-    }
+    const h = String(now.getHours()).padStart(2, '0');
+    const m = String(now.getMinutes()).padStart(2, '0');
+    const s = String(now.getSeconds()).padStart(2, '0');
+    if (els.liveClock) els.liveClock.textContent = `${h}:${m}:${s} WIB`;
   }
   setInterval(updateClock, 1000);
   updateClock();
 
-  // --- Gauge Rendering & Calculations ---
-  /**
-   * Updates an SVG dial gauge
-   * @param {number} value
-   * @param {object} config {min, max, idealMin, idealMax}
-   * @param {SVGElement} fillArc
-   * @param {SVGElement} needleGroup
-   * @param {HTMLElement} valDisplay
-   * @param {HTMLElement} badge
-   */
-  function updateGauge(value, config, fillArc, needleGroup, valDisplay, badge) {
-    const clampedVal = Math.min(Math.max(value, config.min), config.max);
-    const fraction = (clampedVal - config.min) / (config.max - config.min);
+  // --- Gauge Engine ---
+  function updateDial(val, cfg, fillArc, needle, valEl, badgeEl, hintEl) {
+    const clamped = Math.min(Math.max(val, cfg.min), cfg.max);
+    const fraction = (clamped - cfg.min) / (cfg.max - cfg.min);
 
-    // Semi-circle arc offset: 0% = ARC_TOTAL_LENGTH, 100% = 0
-    const offset = ARC_TOTAL_LENGTH * (1 - fraction);
+    // Update Arc
     if (fillArc) {
-      fillArc.style.strokeDashoffset = offset;
+      fillArc.style.strokeDashoffset = ARC_TOTAL * (1 - fraction);
     }
 
-    // Needle rotation: from -90deg (min) to +90deg (max)
-    const angle = -90 + (fraction * 180);
-    if (needleGroup) {
-      needleGroup.setAttribute('transform', `rotate(${angle}, 100, 110)`);
+    // Update Needle (-90deg to +90deg around 100, 105)
+    if (needle) {
+      const angle = -90 + (fraction * 180);
+      needle.setAttribute('transform', `rotate(${angle}, 100, 105)`);
     }
 
-    // Value text
-    if (valDisplay) {
-      valDisplay.textContent = value.toFixed(1);
-    }
+    // Update Value Text
+    if (valEl) valEl.textContent = val.toFixed(1);
 
-    // Status Badge & Colors
-    if (badge) {
-      badge.className = 'status-badge';
-      if (value >= config.idealMin && value <= config.idealMax) {
-        badge.classList.add('badge-optimal');
-        badge.textContent = 'Optimal';
+    // Status Badge & Hint
+    if (badgeEl && hintEl) {
+      badgeEl.className = 'status-chip';
+      if (val >= cfg.idealMin && val <= cfg.idealMax) {
+        badgeEl.classList.add('chip-optimal');
+        badgeEl.textContent = 'Optimal';
+        hintEl.textContent = 'Normal';
+        hintEl.style.color = '#38bdf8';
       } else if (
-        (value >= config.idealMin - 2 && value < config.idealMin) ||
-        (value > config.idealMax && value <= config.idealMax + 3)
+        (val >= cfg.idealMin - 2 && val < cfg.idealMin) ||
+        (val > cfg.idealMax && val <= cfg.idealMax + 3)
       ) {
-        badge.classList.add('badge-warning');
-        badge.textContent = 'Waspada';
+        badgeEl.classList.add('chip-warning');
+        badgeEl.textContent = 'Waspada';
+        hintEl.textContent = val < cfg.idealMin ? 'Agak Rendah' : 'Agak Tinggi';
+        hintEl.style.color = '#fbbf24';
       } else {
-        badge.classList.add('badge-danger');
-        badge.textContent = 'Perhatian';
+        badgeEl.classList.add('chip-danger');
+        badgeEl.textContent = 'Perhatian';
+        hintEl.textContent = val < cfg.idealMin ? 'Terlalu Rendah' : 'Terlalu Tinggi';
+        hintEl.style.color = '#f87171';
       }
     }
   }
 
-  // Refresh all three gauges
-  function renderAllGauges() {
-    updateGauge(
-      state.airTemp,
-      PARAM_RANGES.airTemp,
-      elements.fillAirTemp,
-      elements.needleAirTemp,
-      elements.valAirTemp,
-      elements.badgeAirTemp
-    );
+  function renderAllDials() {
+    updateDial(state.airTemp, RANGES.airTemp, els.fillAirTemp, els.needleAirTemp, els.valAirTemp, els.badgeAirTemp, els.hintAirTemp);
+    updateDial(state.humidity, RANGES.humidity, els.fillHumidity, els.needleHumidity, els.valHumidity, els.badgeHumidity, els.hintHumidity);
+    updateDial(state.waterTemp, RANGES.waterTemp, els.fillWaterTemp, els.needleWaterTemp, els.valWaterTemp, els.badgeWaterTemp, els.hintWaterTemp);
 
-    updateGauge(
-      state.humidity,
-      PARAM_RANGES.humidity,
-      elements.fillHumidity,
-      elements.needleHumidity,
-      elements.valHumidity,
-      elements.badgeHumidity
-    );
-
-    updateGauge(
-      state.waterTemp,
-      PARAM_RANGES.waterTemp,
-      elements.fillWaterTemp,
-      elements.needleWaterTemp,
-      elements.valWaterTemp,
-      elements.badgeWaterTemp
-    );
-
-    updateSummaries();
+    updateEcoBanner();
+    updateMiniStats();
   }
 
-  // --- Summary Calculations ---
-  function updateSummaries() {
+  // --- Eco Banner Logic (Ramah Pengguna) ---
+  function updateEcoBanner() {
+    let optimalCount = 0;
+    let issues = [];
+
+    if (state.airTemp >= RANGES.airTemp.idealMin && state.airTemp <= RANGES.airTemp.idealMax) {
+      optimalCount++;
+    } else {
+      issues.push(state.airTemp > RANGES.airTemp.idealMax ? 'Suhu udara panas' : 'Suhu udara dingin');
+    }
+
+    if (state.humidity >= RANGES.humidity.idealMin && state.humidity <= RANGES.humidity.idealMax) {
+      optimalCount++;
+    } else {
+      issues.push(state.humidity > RANGES.humidity.idealMax ? 'Udara lembap' : 'Udara kering');
+    }
+
+    if (state.waterTemp >= RANGES.waterTemp.idealMin && state.waterTemp <= RANGES.waterTemp.idealMax) {
+      optimalCount++;
+    } else {
+      issues.push(state.waterTemp > RANGES.waterTemp.idealMax ? 'Air hangat' : 'Air dingin');
+    }
+
+    if (optimalCount === 3) {
+      els.ecoIcon.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
+      els.ecoIcon.style.color = '#38bdf8';
+      els.ecoTitle.textContent = 'Kondisi Hidroponik Prima';
+      els.ecoDesc.textContent = 'Semua parameter dalam rentang ideal untuk pertumbuhan tanaman.';
+    } else if (optimalCount >= 2) {
+      els.ecoIcon.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
+      els.ecoIcon.style.color = '#fbbf24';
+      els.ecoTitle.textContent = 'Kondisi Cukup Baik';
+      els.ecoDesc.textContent = `Perhatian kecil: ${issues.join(', ')}.`;
+    } else {
+      els.ecoIcon.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i>';
+      els.ecoIcon.style.color = '#f87171';
+      els.ecoTitle.textContent = 'Perlu Tindakan';
+      els.ecoDesc.textContent = `Penyesuaian diperlukan untuk: ${issues.join(', ')}.`;
+    }
+  }
+
+  // --- Mini Stats ---
+  function updateMiniStats() {
     if (state.history.length === 0) return;
+    const len = state.history.length;
+    const avgAir = (state.history.reduce((a, b) => a + b.airTemp, 0) / len).toFixed(1);
+    const avgHum = (state.history.reduce((a, b) => a + b.humidity, 0) / len).toFixed(1);
+    const avgWater = (state.history.reduce((a, b) => a + b.waterTemp, 0) / len).toFixed(1);
 
-    const count = state.history.length;
-    const sumAir = state.history.reduce((acc, cur) => acc + cur.airTemp, 0);
-    const sumHum = state.history.reduce((acc, cur) => acc + cur.humidity, 0);
-    const sumWater = state.history.reduce((acc, cur) => acc + cur.waterTemp, 0);
-
-    const avgAir = (sumAir / count).toFixed(1);
-    const avgHum = (sumHum / count).toFixed(1);
-    const avgWater = (sumWater / count).toFixed(1);
-
-    if (elements.avgAirTemp) elements.avgAirTemp.textContent = `${avgAir} °C`;
-    if (elements.avgHumidity) elements.avgHumidity.textContent = `${avgHum} %`;
-    if (elements.avgWaterTemp) elements.avgWaterTemp.textContent = `${avgWater} °C`;
-
-    // Overall Eco Status
-    let healthyCount = 0;
-    if (state.airTemp >= PARAM_RANGES.airTemp.idealMin && state.airTemp <= PARAM_RANGES.airTemp.idealMax) healthyCount++;
-    if (state.humidity >= PARAM_RANGES.humidity.idealMin && state.humidity <= PARAM_RANGES.humidity.idealMax) healthyCount++;
-    if (state.waterTemp >= PARAM_RANGES.waterTemp.idealMin && state.waterTemp <= PARAM_RANGES.waterTemp.idealMax) healthyCount++;
-
-    if (elements.ecoStatus) {
-      if (healthyCount === 3) {
-        elements.ecoStatus.textContent = 'Optimal & Prima';
-        elements.ecoStatus.className = 'summary-val status-good';
-      } else if (healthyCount >= 2) {
-        elements.ecoStatus.textContent = 'Cukup Baik';
-        elements.ecoStatus.className = 'summary-val';
-        elements.ecoStatus.style.color = '#38bdf8';
-      } else {
-        elements.ecoStatus.textContent = 'Perlu Tindakan';
-        elements.ecoStatus.className = 'summary-val';
-        elements.ecoStatus.style.color = '#fbbf24';
-      }
-    }
+    if (els.avgAirTemp) els.avgAirTemp.textContent = `${avgAir} °C`;
+    if (els.avgHumidity) els.avgHumidity.textContent = `${avgHum} %`;
+    if (els.avgWaterTemp) els.avgWaterTemp.textContent = `${avgWater} °C`;
   }
 
-  // --- Chart.js Telemetry Initialization ---
-  let telemetryChart = null;
+  // --- Tab Filters (Mobile Focus Single Parameter) ---
+  els.tabButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      els.tabButtons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      const target = btn.getAttribute('data-tab');
+      state.currentTab = target;
+
+      els.cards.forEach(card => {
+        const cat = card.getAttribute('data-category');
+        if (target === 'all' || cat === target) {
+          card.classList.remove('hidden');
+        } else {
+          card.classList.add('hidden');
+        }
+      });
+    });
+  });
+
+  // --- Chart.js Mobile Setup ---
+  let chart = null;
 
   function initChart() {
     const ctx = document.getElementById('telemetryChart');
     if (!ctx) return;
 
-    // Chart.js Default styling
     Chart.defaults.color = '#94a3b8';
     Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
 
-    // Create subtle gradient fills
-    const chartContext = ctx.getContext('2d');
-    const airGrad = chartContext.createLinearGradient(0, 0, 0, 300);
-    airGrad.addColorStop(0, 'rgba(56, 189, 248, 0.25)');
-    airGrad.addColorStop(1, 'rgba(56, 189, 248, 0.0)');
-
-    const humGrad = chartContext.createLinearGradient(0, 0, 0, 300);
-    humGrad.addColorStop(0, 'rgba(129, 140, 248, 0.25)');
-    humGrad.addColorStop(1, 'rgba(129, 140, 248, 0.0)');
-
-    const waterGrad = chartContext.createLinearGradient(0, 0, 0, 300);
-    waterGrad.addColorStop(0, 'rgba(6, 182, 212, 0.25)');
-    waterGrad.addColorStop(1, 'rgba(6, 182, 212, 0.0)');
-
-    telemetryChart = new Chart(ctx, {
+    chart = new Chart(ctx, {
       type: 'line',
       data: {
         labels: [],
@@ -246,45 +250,33 @@ document.addEventListener('DOMContentLoaded', () => {
             label: 'Suhu Udara (°C)',
             data: [],
             borderColor: '#38bdf8',
-            backgroundColor: airGrad,
-            borderWidth: 2.2,
+            backgroundColor: 'rgba(56, 189, 248, 0.1)',
+            borderWidth: 2,
             tension: 0.35,
             fill: true,
-            pointRadius: 3,
-            pointHoverRadius: 6,
-            pointBackgroundColor: '#38bdf8',
-            pointBorderColor: '#0b0f17',
-            pointBorderWidth: 1.5,
+            pointRadius: 2,
             yAxisID: 'yTemp',
           },
           {
             label: 'Kelembapan (%)',
             data: [],
             borderColor: '#818cf8',
-            backgroundColor: humGrad,
-            borderWidth: 2.2,
+            backgroundColor: 'rgba(129, 140, 248, 0.08)',
+            borderWidth: 2,
             tension: 0.35,
             fill: true,
-            pointRadius: 3,
-            pointHoverRadius: 6,
-            pointBackgroundColor: '#818cf8',
-            pointBorderColor: '#0b0f17',
-            pointBorderWidth: 1.5,
-            yAxisID: 'yHumidity',
+            pointRadius: 2,
+            yAxisID: 'yHum',
           },
           {
             label: 'Suhu Air (°C)',
             data: [],
             borderColor: '#06b6d4',
-            backgroundColor: waterGrad,
-            borderWidth: 2.2,
+            backgroundColor: 'rgba(6, 182, 212, 0.08)',
+            borderWidth: 2,
             tension: 0.35,
             fill: true,
-            pointRadius: 3,
-            pointHoverRadius: 6,
-            pointBackgroundColor: '#06b6d4',
-            pointBorderColor: '#0b0f17',
-            pointBorderWidth: 1.5,
+            pointRadius: 2,
             yAxisID: 'yTemp',
           },
         ],
@@ -292,88 +284,48 @@ document.addEventListener('DOMContentLoaded', () => {
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        animation: {
-          duration: 400,
-        },
-        interaction: {
-          mode: 'index',
-          intersect: false,
-        },
+        animation: { duration: 300 },
+        interaction: { mode: 'index', intersect: false },
         plugins: {
-          legend: {
-            display: false, // We use custom toggle chips
-          },
+          legend: { display: false },
           tooltip: {
-            backgroundColor: 'rgba(24, 34, 50, 0.95)',
-            titleColor: '#f8fafc',
-            bodyColor: '#e2e8f0',
+            backgroundColor: 'rgba(21, 29, 42, 0.95)',
             borderColor: '#38bdf8',
             borderWidth: 1,
-            padding: 10,
-            boxPadding: 4,
-            usePointStyle: true,
-            callbacks: {
-              label: (context) => {
-                const label = context.dataset.label || '';
-                const val = context.parsed.y;
-                return ` ${label}: ${val.toFixed(1)}`;
-              },
-            },
+            titleFont: { size: 11 },
+            bodyFont: { size: 11 },
+            padding: 8,
           },
         },
         scales: {
           x: {
-            grid: {
-              color: 'rgba(255, 255, 255, 0.05)',
-              drawBorder: false,
-            },
+            grid: { color: 'rgba(255, 255, 255, 0.04)' },
             ticks: {
               color: '#64748b',
-              font: {
-                family: "'JetBrains Mono', monospace",
-                size: 10,
-              },
-              maxRotation: 0,
+              font: { family: "'JetBrains Mono', monospace", size: 9 },
+              maxTicksLimit: 6,
             },
           },
           yTemp: {
-            type: 'linear',
             position: 'left',
             min: 15,
-            max: 40,
-            title: {
-              display: true,
-              text: 'Suhu (°C)',
-              color: '#38bdf8',
-              font: { size: 11, weight: '600' },
-            },
-            grid: {
-              color: 'rgba(255, 255, 255, 0.05)',
-            },
+            max: 42,
+            grid: { color: 'rgba(255, 255, 255, 0.04)' },
             ticks: {
-              color: '#94a3b8',
-              font: { family: "'JetBrains Mono', monospace", size: 10 },
+              color: '#38bdf8',
+              font: { family: "'JetBrains Mono', monospace", size: 9 },
               stepSize: 5,
             },
           },
-          yHumidity: {
-            type: 'linear',
+          yHum: {
             position: 'right',
-            min: 40,
+            min: 35,
             max: 100,
-            title: {
-              display: true,
-              text: 'Kelembapan (%)',
-              color: '#818cf8',
-              font: { size: 11, weight: '600' },
-            },
-            grid: {
-              drawOnChartArea: false, // Prevent overlapping grid lines
-            },
+            grid: { display: false },
             ticks: {
-              color: '#94a3b8',
-              font: { family: "'JetBrains Mono', monospace", size: 10 },
-              stepSize: 10,
+              color: '#818cf8',
+              font: { family: "'JetBrains Mono', monospace", size: 9 },
+              stepSize: 15,
             },
           },
         },
@@ -381,268 +333,238 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Push new telemetry entry to state & chart
-  function pushTelemetryData(airTemp, humidity, waterTemp) {
+  function pushData(air, hum, water) {
     const now = new Date();
-    const timeLabel = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+    const t = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
 
-    const record = {
-      timestamp: timeLabel,
-      isoDate: now.toISOString(),
-      airTemp,
-      humidity,
-      waterTemp,
-    };
+    state.history.push({
+      time: t,
+      iso: now.toISOString(),
+      airTemp: air,
+      humidity: hum,
+      waterTemp: water,
+    });
 
-    state.history.push(record);
-    if (state.history.length > state.maxHistoryPoints) {
+    if (state.history.length > state.maxPoints) {
       state.history.shift();
     }
 
-    if (telemetryChart) {
-      telemetryChart.data.labels.push(timeLabel);
-      telemetryChart.data.datasets[0].data.push(airTemp);
-      telemetryChart.data.datasets[1].data.push(humidity);
-      telemetryChart.data.datasets[2].data.push(waterTemp);
+    if (chart) {
+      chart.data.labels.push(t);
+      chart.data.datasets[0].data.push(air);
+      chart.data.datasets[1].data.push(hum);
+      chart.data.datasets[2].data.push(water);
 
-      if (telemetryChart.data.labels.length > state.maxHistoryPoints) {
-        telemetryChart.data.labels.shift();
-        telemetryChart.data.datasets[0].data.shift();
-        telemetryChart.data.datasets[1].data.shift();
-        telemetryChart.data.datasets[2].data.shift();
+      if (chart.data.labels.length > state.maxPoints) {
+        chart.data.labels.shift();
+        chart.data.datasets.forEach(d => d.data.shift());
       }
-
-      telemetryChart.update('none'); // smooth fast update
+      chart.update('none');
     }
 
-    renderAllGauges();
+    renderAllDials();
   }
 
-  // Pre-seed chart with initial historical points
-  function seedInitialData() {
+  function seedData() {
     const now = Date.now();
-    for (let i = 12; i >= 0; i--) {
-      const pastTime = new Date(now - i * 3000);
-      const timeLabel = `${String(pastTime.getHours()).padStart(2, '0')}:${String(pastTime.getMinutes()).padStart(2, '0')}:${String(pastTime.getSeconds()).padStart(2, '0')}`;
-      
-      const seedAir = +(25.8 + (Math.sin(i / 2) * 1.2) + (Math.random() * 0.4)).toFixed(1);
-      const seedHum = +(67.5 + (Math.cos(i / 2) * 2.5) + (Math.random() * 0.8)).toFixed(1);
-      const seedWater = +(23.2 + (Math.sin(i / 3) * 0.8) + (Math.random() * 0.3)).toFixed(1);
+    for (let i = 10; i >= 0; i--) {
+      const d = new Date(now - i * 3000);
+      const t = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`;
+      const a = +(25.8 + Math.sin(i / 2) * 0.8).toFixed(1);
+      const h = +(67.5 + Math.cos(i / 2) * 2.0).toFixed(1);
+      const w = +(23.4 + Math.sin(i / 3) * 0.5).toFixed(1);
 
-      state.history.push({
-        timestamp: timeLabel,
-        isoDate: pastTime.toISOString(),
-        airTemp: seedAir,
-        humidity: seedHum,
-        waterTemp: seedWater,
-      });
-
-      if (telemetryChart) {
-        telemetryChart.data.labels.push(timeLabel);
-        telemetryChart.data.datasets[0].data.push(seedAir);
-        telemetryChart.data.datasets[1].data.push(seedHum);
-        telemetryChart.data.datasets[2].data.push(seedWater);
+      state.history.push({ time: t, iso: d.toISOString(), airTemp: a, humidity: h, waterTemp: w });
+      if (chart) {
+        chart.data.labels.push(t);
+        chart.data.datasets[0].data.push(a);
+        chart.data.datasets[1].data.push(h);
+        chart.data.datasets[2].data.push(w);
       }
     }
-
-    const latest = state.history[state.history.length - 1];
-    state.airTemp = latest.airTemp;
-    state.humidity = latest.humidity;
-    state.waterTemp = latest.waterTemp;
-
-    if (telemetryChart) telemetryChart.update();
-    renderAllGauges();
+    const last = state.history[state.history.length - 1];
+    state.airTemp = last.airTemp;
+    state.humidity = last.humidity;
+    state.waterTemp = last.waterTemp;
+    if (chart) chart.update();
+    renderAllDials();
   }
 
   // --- Real-time Simulation Engine ---
-  let simInterval = null;
+  let timer = null;
 
-  function runSimulationStep() {
+  function stepSim() {
     if (!state.isSimulating) return;
+    const da = (Math.random() - 0.48) * 0.35;
+    const dh = (Math.random() - 0.49) * 0.7;
+    const dw = (Math.random() - 0.49) * 0.2;
 
-    // Realistic gradual walk around healthy hydroponic points
-    const deltaAir = (Math.random() - 0.48) * 0.35;
-    const deltaHum = (Math.random() - 0.49) * 0.7;
-    const deltaWater = (Math.random() - 0.49) * 0.2;
+    state.airTemp = Math.min(Math.max(+(state.airTemp + da).toFixed(1), 18), 36);
+    state.humidity = Math.min(Math.max(+(state.humidity + dh).toFixed(1), 45), 90);
+    state.waterTemp = Math.min(Math.max(+(state.waterTemp + dw).toFixed(1), 16), 30);
 
-    state.airTemp = Math.min(Math.max(+(state.airTemp + deltaAir).toFixed(1), 18), 36);
-    state.humidity = Math.min(Math.max(+(state.humidity + deltaHum).toFixed(1), 45), 90);
-    state.waterTemp = Math.min(Math.max(+(state.waterTemp + deltaWater).toFixed(1), 16), 30);
-
-    pushTelemetryData(state.airTemp, state.humidity, state.waterTemp);
+    pushData(state.airTemp, state.humidity, state.waterTemp);
   }
 
-  function startSimulation() {
-    if (simInterval) clearInterval(simInterval);
-    simInterval = setInterval(runSimulationStep, 2500);
+  function startSim() {
+    if (timer) clearInterval(timer);
+    timer = setInterval(stepSim, 2500);
     state.isSimulating = true;
-    updateSimButtonUI();
+    updateSimUI();
   }
 
-  function stopSimulation() {
-    if (simInterval) clearInterval(simInterval);
+  function stopSim() {
+    if (timer) clearInterval(timer);
     state.isSimulating = false;
-    updateSimButtonUI();
+    updateSimUI();
   }
 
-  function updateSimButtonUI() {
+  function updateSimUI() {
     if (state.isSimulating) {
-      if (elements.simIcon) elements.simIcon.className = 'fa-solid fa-pause';
-      if (elements.simBtnText) elements.simBtnText.textContent = 'Jeda';
-      if (elements.connectionStatusText) elements.connectionStatusText.textContent = 'Sistem Aktif (Live)';
+      if (els.simIcon) els.simIcon.className = 'fa-solid fa-pause';
+      if (els.simBtnText) els.simBtnText.textContent = 'Jeda Simulasi';
+      if (els.liveText) els.liveText.textContent = 'LIVE';
+      if (els.livePill) els.livePill.style.borderColor = 'rgba(56, 189, 248, 0.4)';
     } else {
-      if (elements.simIcon) elements.simIcon.className = 'fa-solid fa-play';
-      if (elements.simBtnText) elements.simBtnText.textContent = 'Lanjutkan';
-      if (elements.connectionStatusText) elements.connectionStatusText.textContent = 'Simulasi Dijeda';
+      if (els.simIcon) els.simIcon.className = 'fa-solid fa-play';
+      if (els.simBtnText) els.simBtnText.textContent = 'Lanjut Simulasi';
+      if (els.liveText) els.liveText.textContent = 'JEDA';
+      if (els.livePill) els.livePill.style.borderColor = '#64748b';
     }
   }
 
-  // --- Filter Chips / Toggle Datasets in Chart ---
-  function setupDatasetToggles() {
-    const toggles = [
-      { btn: elements.toggleAirTemp, index: 0 },
-      { btn: elements.toggleHumidity, index: 1 },
-      { btn: elements.toggleWaterTemp, index: 2 },
-    ];
-
-    toggles.forEach(({ btn, index }) => {
-      if (!btn) return;
-      btn.addEventListener('click', () => {
-        if (!telemetryChart) return;
-        const isVisible = telemetryChart.isDatasetVisible(index);
-        telemetryChart.setDatasetVisibility(index, !isVisible);
-        telemetryChart.update();
-
-        if (isVisible) {
-          btn.classList.remove('active');
-          btn.style.opacity = '0.5';
-        } else {
-          btn.classList.add('active');
-          btn.style.opacity = '1';
-        }
-      });
+  if (els.btnSimToggle) {
+    els.btnSimToggle.addEventListener('click', () => {
+      if (state.isSimulating) stopSim();
+      else startSim();
     });
   }
 
-  // --- Reset Chart Action ---
-  if (elements.btnResetChart) {
-    elements.btnResetChart.addEventListener('click', () => {
-      state.history = [];
-      if (telemetryChart) {
-        telemetryChart.data.labels = [];
-        telemetryChart.data.datasets.forEach(ds => (ds.data = []));
-        telemetryChart.update();
-      }
-      pushTelemetryData(state.airTemp, state.humidity, state.waterTemp);
-    });
-  }
-
-  // --- Export CSV Action ---
-  if (elements.btnExportCSV) {
-    elements.btnExportCSV.addEventListener('click', () => {
-      if (state.history.length === 0) {
-        alert('Belum ada data untuk diunduh.');
-        return;
-      }
-
-      let csv = 'Timestamp,Waktu_ISO,Suhu_Udara_C,Kelembapan_Persen,Suhu_Air_C\n';
-      state.history.forEach(item => {
-        csv += `${item.timestamp},"${item.isoDate}",${item.airTemp},${item.humidity},${item.waterTemp}\n`;
-      });
-
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.setAttribute('href', url);
-      link.setAttribute('download', `log_hidroponik_${Date.now()}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    });
-  }
-
-  // --- Modal & Manual Data Input Handlers ---
-  function setupModalHandlers() {
-    if (elements.btnSettings && elements.settingsModal) {
-      elements.btnSettings.addEventListener('click', () => {
-        elements.settingsModal.classList.add('active');
-      });
-    }
-
-    const closeModal = () => {
-      if (elements.settingsModal) elements.settingsModal.classList.remove('active');
-    };
-
-    if (elements.btnCloseModal) elements.btnCloseModal.addEventListener('click', closeModal);
-    if (elements.btnCloseModalBtn) elements.btnCloseModalBtn.addEventListener('click', closeModal);
-
-    if (elements.settingsModal) {
-      elements.settingsModal.addEventListener('click', (e) => {
-        if (e.target === elements.settingsModal) closeModal();
-      });
-    }
-
-    // Radio data source switch
-    if (elements.radioSim && elements.radioManual) {
-      elements.radioSim.addEventListener('change', () => {
-        if (elements.radioSim.checked) {
-          startSimulation();
-        }
-      });
-
-      elements.radioManual.addEventListener('change', () => {
-        if (elements.radioManual.checked) {
-          stopSimulation();
-        }
-      });
-    }
-
-    // Apply manual data button
-    if (elements.btnApplyManual) {
-      elements.btnApplyManual.addEventListener('click', () => {
-        const air = parseFloat(elements.inputAirTemp.value);
-        const hum = parseFloat(elements.inputHumidity.value);
-        const water = parseFloat(elements.inputWaterTemp.value);
-
-        if (!isNaN(air) && !isNaN(hum) && !isNaN(water)) {
-          stopSimulation();
-          if (elements.radioManual) elements.radioManual.checked = true;
-          state.airTemp = air;
-          state.humidity = hum;
-          state.waterTemp = water;
-          pushTelemetryData(air, hum, water);
-          closeModal();
-        } else {
-          alert('Mohon masukkan angka nilai sensor yang valid.');
-        }
-      });
-    }
-  }
-
-  // --- Toggle Simulation Button in Header ---
-  if (elements.btnSimToggle) {
-    elements.btnSimToggle.addEventListener('click', () => {
-      if (state.isSimulating) {
-        stopSimulation();
-      } else {
-        startSimulation();
-      }
-    });
-  }
-
-  // Global API Hook: Allows external script or ESP32 post message to update data
-  window.updateHydroponicData = (suhuUdara, kelembapan, suhuAir) => {
-    stopSimulation();
-    state.airTemp = parseFloat(suhuUdara);
-    state.humidity = parseFloat(kelembapan);
-    state.waterTemp = parseFloat(suhuAir);
-    pushTelemetryData(state.airTemp, state.humidity, state.waterTemp);
+  // --- Bottom Sheet & Mobile Sliders ---
+  const openSheet = () => {
+    if (els.settingsModal) els.settingsModal.classList.add('active');
+  };
+  const closeSheet = () => {
+    if (els.settingsModal) els.settingsModal.classList.remove('active');
   };
 
-  // --- Execution Bootstrap ---
+  if (els.btnOpenManual) els.btnOpenManual.addEventListener('click', openSheet);
+  if (els.btnSettings) els.btnSettings.addEventListener('click', openSheet);
+  if (els.btnCloseModal) els.btnCloseModal.addEventListener('click', closeSheet);
+
+  if (els.settingsModal) {
+    els.settingsModal.addEventListener('click', (e) => {
+      if (e.target === els.settingsModal) closeSheet();
+    });
+  }
+
+  // Sliders input handling
+  if (els.sliderAir && els.sliderAirVal) {
+    els.sliderAir.addEventListener('input', (e) => {
+      els.sliderAirVal.textContent = `${parseFloat(e.target.value).toFixed(1)} °C`;
+    });
+  }
+  if (els.sliderHum && els.sliderHumVal) {
+    els.sliderHum.addEventListener('input', (e) => {
+      els.sliderHumVal.textContent = `${e.target.value} %`;
+    });
+  }
+  if (els.sliderWater && els.sliderWaterVal) {
+    els.sliderWater.addEventListener('input', (e) => {
+      els.sliderWaterVal.textContent = `${parseFloat(e.target.value).toFixed(1)} °C`;
+    });
+  }
+
+  if (els.optAutoSim && els.optManual) {
+    els.optAutoSim.addEventListener('click', () => {
+      els.optAutoSim.classList.add('active');
+      els.optManual.classList.remove('active');
+      startSim();
+    });
+    els.optManual.addEventListener('click', () => {
+      els.optManual.classList.add('active');
+      els.optAutoSim.classList.remove('active');
+      stopSim();
+    });
+  }
+
+  if (els.btnApplyManual) {
+    els.btnApplyManual.addEventListener('click', () => {
+      stopSim();
+      if (els.optManual) {
+        els.optManual.classList.add('active');
+        els.optAutoSim.classList.remove('active');
+      }
+      const a = parseFloat(els.sliderAir.value);
+      const h = parseFloat(els.sliderHum.value);
+      const w = parseFloat(els.sliderWater.value);
+
+      state.airTemp = a;
+      state.humidity = h;
+      state.waterTemp = w;
+      pushData(a, h, w);
+      closeSheet();
+    });
+  }
+
+  // --- Chart Legend Toggles ---
+  [
+    { btn: els.toggleAirTemp, idx: 0 },
+    { btn: els.toggleHumidity, idx: 1 },
+    { btn: els.toggleWaterTemp, idx: 2 },
+  ].forEach(({ btn, idx }) => {
+    if (!btn) return;
+    btn.addEventListener('click', () => {
+      if (!chart) return;
+      const vis = chart.isDatasetVisible(idx);
+      chart.setDatasetVisibility(idx, !vis);
+      chart.update();
+      btn.classList.toggle('active', !vis);
+    });
+  });
+
+  // --- Reset & CSV ---
+  if (els.btnResetChart) {
+    els.btnResetChart.addEventListener('click', () => {
+      state.history = [];
+      if (chart) {
+        chart.data.labels = [];
+        chart.data.datasets.forEach(d => (d.data = []));
+        chart.update();
+      }
+      pushData(state.airTemp, state.humidity, state.waterTemp);
+    });
+  }
+
+  if (els.btnExportCSV) {
+    els.btnExportCSV.addEventListener('click', () => {
+      if (state.history.length === 0) return;
+      let csv = 'Waktu,Waktu_ISO,Suhu_Udara_C,Kelembapan_Persen,Suhu_Air_C\n';
+      state.history.forEach(r => {
+        csv += `${r.time},"${r.iso}",${r.airTemp},${r.humidity},${r.waterTemp}\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `telemetri_hidroponik_${Date.now()}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    });
+  }
+
+  // Global Hook
+  window.updateHydroponicData = (a, h, w) => {
+    stopSim();
+    state.airTemp = parseFloat(a);
+    state.humidity = parseFloat(h);
+    state.waterTemp = parseFloat(w);
+    pushData(state.airTemp, state.humidity, state.waterTemp);
+  };
+
+  // Bootstrap
   initChart();
-  seedInitialData();
-  setupDatasetToggles();
-  setupModalHandlers();
-  startSimulation();
+  seedData();
+  startSim();
 });
