@@ -10,15 +10,20 @@
 #include <DallasTemperature.h>
 #include <HTTPClient.h>
 
-// Konfigurasi Pin Sensor
+// Konfigurasi Pin Sensor & Aktuator
 #define DHTPIN 4           // Pin Data DHT22 (Suhu & Kelembapan Udara)
 #define DHTTYPE DHT22
 #define ONE_WIRE_BUS 5     // Pin Data DS18B20 (Suhu Air Nutrisi)
+#define RELAY_POMPA_PIN 18 // Pin Relay Pompa Sirkulasi Air Nutrisi
+
+// Ambang Batas Suhu Air untuk Sirkulasi Otomatis (°C)
+const float AMBANG_SUHU_POMPA = 25.0; // Jika suhu air > 25°C, pompa memutar air agar panas merata & dingin
+bool statusPompa = false;
 
 // Konfigurasi WiFi (Opsional jika kirim ke server lokal / cloud)
 const char* ssid = "NAMA_WIFI_ANDA";
 const char* password = "PASSWORD_WIFI";
-const char* serverEndpoint = "http://192.168.1.100:3000/api/telemetry"; // Sesuaikan endpoint
+const char* serverEndpoint = "http://192.168.1.100:5000/api/telemetry"; // Sesuaikan endpoint
 
 // Inisialisasi Objek Sensor
 DHT dht(DHTPIN, DHTTYPE);
@@ -30,14 +35,16 @@ void setup() {
   delay(1000);
   Serial.println("==================================================");
   Serial.println(" Sistem Monitoring Hidroponik - Proyek Abdimas");
-  Serial.println(" Inisialisasi Sensor...");
+  Serial.println(" Inisialisasi Sensor & Relay Pompa...");
   Serial.println("==================================================");
 
-  // Inisialisasi DHT22
+  // Inisialisasi DHT22 & DS18B20
   dht.begin();
-
-  // Inisialisasi DS18B20
   waterSensor.begin();
+
+  // Inisialisasi Relay Pompa Sirkulasi
+  pinMode(RELAY_POMPA_PIN, OUTPUT);
+  digitalWrite(RELAY_POMPA_PIN, LOW); // Pompa mati (standby) saat awal booting
 
   // Koneksi WiFi (Opsional)
   /*
@@ -50,7 +57,7 @@ void setup() {
   Serial.println("\nWiFi Terhubung! IP: " + WiFi.localIP().toString());
   */
 
-  Serial.println("Sensor siap membaca telemetri!");
+  Serial.println("Sensor & Relay Pompa siap beroperasi!");
 }
 
 void loop() {
@@ -75,16 +82,29 @@ void loop() {
     waterTemp = 24.0;
   }
 
-  // 3. Format Output JSON Serial
+  // 3. Logika Otomatisasi Pompa Air Sirkulasi:
+  // Ketika suhu air melewati ambang batas (> 25°C), pompa memutar air agar panas merata dan mendingin.
+  if (waterTemp > AMBANG_SUHU_POMPA) {
+    digitalWrite(RELAY_POMPA_PIN, HIGH); // Aktifkan relay pompa
+    statusPompa = true;
+  } else if (waterTemp <= (AMBANG_SUHU_POMPA - 0.5)) {
+    // Histeresis 0.5°C agar relay tidak bolak-balik hidup-mati cepat
+    digitalWrite(RELAY_POMPA_PIN, LOW);  // Matikan relay pompa
+    statusPompa = false;
+  }
+
+  // 4. Format Output JSON Serial
   String jsonPayload = "{";
   jsonPayload += "\"suhu_udara\":" + String(airTemp, 1) + ",";
   jsonPayload += "\"kelembapan\":" + String(humidity, 1) + ",";
-  jsonPayload += "\"suhu_air\":" + String(waterTemp, 1);
+  jsonPayload += "\"suhu_air\":" + String(waterTemp, 1) + ",";
+  jsonPayload += "\"pompa\":\"" + String(statusPompa ? "HIDUP" : "STANDBY") + "\",";
+  jsonPayload += "\"pompa_status\":" + String(statusPompa ? "true" : "false");
   jsonPayload += "}";
 
   Serial.println("DATA TELEMETRI: " + jsonPayload);
 
-  // 4. Pengiriman HTTP POST (Jika terhubung WiFi)
+  // 5. Pengiriman HTTP POST (Jika terhubung WiFi)
   /*
   if (WiFi.status() == WL_CONNECTED) {
     HTTPClient http;

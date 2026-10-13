@@ -472,6 +472,110 @@
       gap: 5px;
     }
 
+    /* Water Pump Circulation Widget */
+    .pump-widget {
+      width: 100%;
+      margin-top: 10px;
+      padding: 10px 12px;
+      background: var(--bg-card-subtle);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      transition: all 0.3s ease;
+    }
+
+    .pump-widget.active {
+      border-color: rgba(56, 189, 248, 0.7);
+      background: linear-gradient(135deg, rgba(23, 32, 48, 0.9), rgba(2, 132, 199, 0.18));
+      box-shadow: 0 0 16px rgba(56, 189, 248, 0.25);
+    }
+
+    .pump-widget-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+    }
+
+    .pump-rotor {
+      font-size: 22px;
+      color: #64748b;
+      display: inline-block;
+      transition: color 0.3s ease;
+      flex-shrink: 0;
+    }
+
+    .pump-widget.active .pump-rotor {
+      color: var(--sky-main);
+      filter: drop-shadow(0 0 8px var(--sky-main));
+      animation: spin-pump 1.2s linear infinite;
+    }
+
+    @keyframes spin-pump {
+      100% { transform: rotate(360deg); }
+    }
+
+    .pump-title-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.78rem;
+    }
+
+    .pump-title-row span {
+      color: var(--text-muted);
+    }
+
+    .pump-badge-state {
+      font-weight: 800;
+      font-size: 0.72rem;
+      padding: 2px 7px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .pump-badge-off {
+      background: rgba(100, 116, 139, 0.2);
+      color: #94a3b8;
+      border: 1px solid #334155;
+    }
+
+    .pump-badge-on {
+      background: var(--optimal-bg);
+      color: var(--sky-main);
+      border: 1px solid rgba(56, 189, 248, 0.5);
+      box-shadow: 0 0 8px rgba(56, 189, 248, 0.3);
+    }
+
+    .pump-hint-text {
+      font-size: 0.68rem;
+      color: var(--text-dark);
+      margin-top: 1px;
+      line-height: 1.25;
+    }
+
+    .btn-pump-mode {
+      padding: 5px 9px;
+      border-radius: var(--radius-sm);
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      color: var(--text-muted);
+      font-size: 0.7rem;
+      font-weight: 700;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: all 0.2s;
+    }
+
+    .btn-pump-mode:hover, .btn-pump-mode:active {
+      border-color: var(--sky-main);
+      color: var(--sky-light);
+    }
+
     /* Summary Bar */
     .summary-grid {
       display: grid;
@@ -775,6 +879,7 @@
         <span class="eco-pill">Suhu: <strong id="pillAir">25.8°C</strong></span>
         <span class="eco-pill">Hum: <strong id="pillHum">70.2%</strong></span>
         <span class="eco-pill">Air: <strong id="pillWater">23.3°C</strong></span>
+        <span class="eco-pill" id="ecoPillPump">Pompa: <strong id="pillPumpText" style="color: #64748b;">STANDBY</strong></span>
       </div>
     </section>
 
@@ -856,6 +961,23 @@
             <span class="display-unit">°C</span>
           </div>
           <div class="ideal-tag">🎯 Rentang Ideal: 18°C – 25°C</div>
+
+          <!-- Pompa Air Sirkulasi Nutrisi Widget -->
+          <div class="pump-widget" id="pumpWidget">
+            <div class="pump-widget-left">
+              <span class="pump-rotor" id="pumpRotor">🌀</span>
+              <div>
+                <div class="pump-title-row">
+                  <span>Pompa Sirkulasi:</span>
+                  <strong id="pumpStateBadge" class="pump-badge-state pump-badge-off">STANDBY (Mati)</strong>
+                </div>
+                <p class="pump-hint-text" id="pumpHintText">Suhu air &le; 25.0°C (Air aman, pompa mati)</p>
+              </div>
+            </div>
+            <button class="btn-pump-mode" id="btnPumpToggle" title="Klik untuk mengalihkan Otomatis / Manual">
+              AUTO
+            </button>
+          </div>
         </div>
       </article>
 
@@ -884,11 +1006,11 @@
           <span class="summary-card-val" id="avgWater">23.6 °C</span>
         </div>
       </div>
-      <div class="summary-card">
-        <div class="summary-card-icon">🛡️</div>
+      <div class="summary-card" id="cardPumpSummary">
+        <div class="summary-card-icon" id="pumpSummaryIcon">🌀</div>
         <div class="summary-card-text">
-          <span class="summary-card-label">Status Ekosistem</span>
-          <span class="summary-card-val" id="ecoStatusText" style="color: #38bdf8;">Optimal Prima</span>
+          <span class="summary-card-label">Pompa Sirkulasi Air</span>
+          <span class="summary-card-val" id="pumpSummaryVal" style="color: #64748b;">STANDBY (Mati)</span>
         </div>
       </div>
     </section>
@@ -928,7 +1050,7 @@
         <button class="modal-close-btn" id="btnCloseModal">&times;</button>
       </div>
       <div class="modal-body">
-        <p style="font-size: 0.78rem; color: #94a3b8;">Geser nilai di bawah untuk menguji perubahan jarum dial dan grafik secara langsung:</p>
+        <p style="font-size: 0.78rem; color: #94a3b8;">Geser nilai di bawah untuk menguji perubahan jarum dial, status pompa, dan grafik secara langsung:</p>
         
         <div class="slider-row">
           <div class="slider-lbl-box">
@@ -954,6 +1076,14 @@
           <input type="range" id="sliderWater" min="15" max="35" step="0.2" value="23.3">
         </div>
 
+        <div class="slider-row">
+          <div class="slider-lbl-box">
+            <span>Ambang Suhu Pompa Hidup (Pemicu)</span>
+            <strong id="lblSliderThresh">25.0 °C</strong>
+          </div>
+          <input type="range" id="sliderThresh" min="20" max="30" step="0.5" value="25.0">
+        </div>
+
         <button class="btn-block-apply" id="btnApplySlider">Terapkan ke Dashboard</button>
       </div>
     </div>
@@ -975,6 +1105,9 @@
         hum: 70.2,
         water: 23.3,
         isSimulating: true,
+        pumpStatus: false,
+        pumpMode: 'auto',
+        pumpThreshold: 25.0,
         history: [],
         maxPoints: 20
       };
@@ -1127,7 +1260,74 @@
         updateBadge('badgeWater', state.water, RANGES.water);
 
         updateEcoBanner();
+        updatePumpUI();
         updateSummaries();
+      }
+
+      function updatePumpUI() {
+        if (state.pumpMode === 'auto') {
+          if (state.water > state.pumpThreshold) {
+            state.pumpStatus = true;
+          } else if (state.water <= state.pumpThreshold - 0.4) {
+            state.pumpStatus = false;
+          }
+        } else if (state.pumpMode === 'manual-on') {
+          state.pumpStatus = true;
+        } else if (state.pumpMode === 'manual-off') {
+          state.pumpStatus = false;
+        }
+
+        const pWidget = document.getElementById('pumpWidget');
+        const pBadge = document.getElementById('pumpStateBadge');
+        const pHint = document.getElementById('pumpHintText');
+        const pPillText = document.getElementById('pillPumpText');
+        const pSumVal = document.getElementById('pumpSummaryVal');
+        const pSumIcon = document.getElementById('pumpSummaryIcon');
+        const pModeBtn = document.getElementById('btnPumpToggle');
+
+        if (pModeBtn) {
+          pModeBtn.textContent = state.pumpMode === 'auto' ? 'AUTO' : (state.pumpMode === 'manual-on' ? 'MANUAL ON' : 'MANUAL OFF');
+        }
+
+        if (state.pumpStatus) {
+          if (pWidget) pWidget.classList.add('active');
+          if (pBadge) {
+            pBadge.className = 'pump-badge-state pump-badge-on';
+            pBadge.textContent = 'HIDUP (Memutar Air)';
+          }
+          if (pHint) pHint.innerHTML = `🔥 Suhu air hangat (&gt; ${state.pumpThreshold.toFixed(1)}°C). Pompa <strong>memutar air</strong> agar panas merata &amp; dingin.`;
+          if (pPillText) {
+            pPillText.textContent = 'HIDUP';
+            pPillText.style.color = '#38bdf8';
+          }
+          if (pSumVal) {
+            pSumVal.textContent = 'AKTIF (Sirkulasi)';
+            pSumVal.style.color = '#38bdf8';
+          }
+          if (pSumIcon) {
+            pSumIcon.style.animation = 'spin-pump 1.2s linear infinite';
+            pSumIcon.style.color = '#38bdf8';
+          }
+        } else {
+          if (pWidget) pWidget.classList.remove('active');
+          if (pBadge) {
+            pBadge.className = 'pump-badge-state pump-badge-off';
+            pBadge.textContent = 'STANDBY (Mati)';
+          }
+          if (pHint) pHint.textContent = `❄️ Suhu air aman (≤ ${state.pumpThreshold.toFixed(1)}°C). Pompa standby.`;
+          if (pPillText) {
+            pPillText.textContent = 'STANDBY';
+            pPillText.style.color = '#64748b';
+          }
+          if (pSumVal) {
+            pSumVal.textContent = 'STANDBY (Mati)';
+            pSumVal.style.color = '#64748b';
+          }
+          if (pSumIcon) {
+            pSumIcon.style.animation = 'none';
+            pSumIcon.style.color = '#64748b';
+          }
+        }
       }
 
       function updateBadge(id, val, cfg) {
@@ -1330,11 +1530,21 @@
         if (!state.isSimulating) return;
         const da = (Math.random() - 0.48) * 0.35;
         const dh = (Math.random() - 0.49) * 0.7;
-        const dw = (Math.random() - 0.49) * 0.2;
 
         state.air = Math.min(Math.max(+(state.air + da).toFixed(1), 18), 36);
         state.hum = Math.min(Math.max(+(state.hum + dh).toFixed(1), 45), 90);
-        state.water = Math.min(Math.max(+(state.water + dw).toFixed(1), 16), 30);
+
+        // Fisika Sirkulasi Pompa Air:
+        // Jika pompa aktif/hidup, air bersirkulasi mendinginkan suhu air menuju titik ideal (22.0°C - 23.5°C)
+        // Jika pompa mati dan suhu udara panas, suhu air perlahan merangkak naik
+        if (state.pumpStatus) {
+          const coolingRate = 0.22 + Math.random() * 0.12;
+          state.water = Math.max(22.0, +(state.water - coolingRate).toFixed(1));
+        } else {
+          // Suhu air perlahan naik jika di atas 24°C atau berfluktuasi
+          const warmingRate = (Math.random() - 0.35) * 0.22;
+          state.water = Math.min(Math.max(+(state.water + warmingRate).toFixed(1), 16), 31);
+        }
 
         pushRecord(state.air, state.hum, state.water);
       }
@@ -1361,6 +1571,21 @@
         else startSim();
       });
 
+      // --- Pump Manual/Auto Toggle Control ---
+      const btnPumpToggle = document.getElementById('btnPumpToggle');
+      if (btnPumpToggle) {
+        btnPumpToggle.addEventListener('click', () => {
+          if (state.pumpMode === 'auto') {
+            state.pumpMode = 'manual-on';
+          } else if (state.pumpMode === 'manual-on') {
+            state.pumpMode = 'manual-off';
+          } else {
+            state.pumpMode = 'auto';
+          }
+          updatePumpUI();
+        });
+      }
+
       // --- Modal Sliders ---
       const modal = document.getElementById('settingsModal');
       document.getElementById('btnOpenModal').addEventListener('click', () => modal.classList.add('active'));
@@ -1370,16 +1595,24 @@
       const sAir = document.getElementById('sliderAir');
       const sHum = document.getElementById('sliderHum');
       const sWater = document.getElementById('sliderWater');
+      const sThresh = document.getElementById('sliderThresh');
+      const lblThresh = document.getElementById('lblSliderThresh');
 
       sAir.addEventListener('input', (e) => document.getElementById('lblSliderAir').textContent = `${parseFloat(e.target.value).toFixed(1)} °C`);
       sHum.addEventListener('input', (e) => document.getElementById('lblSliderHum').textContent = `${e.target.value} %`);
       sWater.addEventListener('input', (e) => document.getElementById('lblSliderWater').textContent = `${parseFloat(e.target.value).toFixed(1)} °C`);
+      if (sThresh && lblThresh) {
+        sThresh.addEventListener('input', (e) => lblThresh.textContent = `${parseFloat(e.target.value).toFixed(1)} °C`);
+      }
 
       document.getElementById('btnApplySlider').addEventListener('click', () => {
         stopSim();
         state.air = parseFloat(sAir.value);
         state.hum = parseFloat(sHum.value);
         state.water = parseFloat(sWater.value);
+        if (sThresh) {
+          state.pumpThreshold = parseFloat(sThresh.value);
+        }
         pushRecord(state.air, state.hum, state.water);
         modal.classList.remove('active');
       });
@@ -1403,9 +1636,10 @@
       // --- CSV Download ---
       document.getElementById('btnExportCSV').addEventListener('click', () => {
         if (state.history.length === 0) return;
-        let csv = 'Waktu,Waktu_ISO,Suhu_Udara_C,Kelembapan_Persen,Suhu_Air_C\n';
+        let csv = 'Waktu,Waktu_ISO,Suhu_Udara_C,Kelembapan_Persen,Suhu_Air_C,Status_Pompa\n';
         state.history.forEach(r => {
-          csv += `${r.time},"${r.iso}",${r.air},${r.hum},${r.water}\n`;
+          const pumpStr = (r.water > state.pumpThreshold) ? 'HIDUP' : 'STANDBY';
+          csv += `${r.time},"${r.iso}",${r.air},${r.hum},${r.water},${pumpStr}\n`;
         });
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
@@ -1418,11 +1652,15 @@
       });
 
       // Global ESP32 API Hook
-      window.updateHydroponicData = (a, h, w) => {
+      window.updateHydroponicData = (a, h, w, pump = null) => {
         stopSim();
         state.air = parseFloat(a);
         state.hum = parseFloat(h);
         state.water = parseFloat(w);
+        if (pump !== null) {
+          state.pumpMode = 'hardware';
+          state.pumpStatus = (pump === true || pump === 'ON' || pump === 1 || pump === '1');
+        }
         pushRecord(state.air, state.hum, state.water);
       };
 

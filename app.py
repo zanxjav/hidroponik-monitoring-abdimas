@@ -139,7 +139,7 @@ st.markdown("""
     /* Mini Stats Grid */
     .mini-stats-row {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(2, 1fr);
         gap: 8px;
         margin-top: 12px;
         margin-bottom: 12px;
@@ -163,21 +163,71 @@ st.markdown("""
         font-weight: 700;
         color: #f8fafc;
     }
+
+    /* Pompa Sirkulasi Air Card */
+    .pump-card {
+        background: #151d2a;
+        border: 1px solid #222f42;
+        border-radius: 14px;
+        padding: 12px 14px;
+        margin-top: 10px;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+    }
+    .pump-card.active {
+        border-color: rgba(56, 189, 248, 0.45);
+        background: linear-gradient(135deg, #151d2a 60%, rgba(56, 189, 248, 0.12));
+    }
+    .pump-icon {
+        font-size: 1.8rem;
+    }
+    .pump-badge-on {
+        background: rgba(56, 189, 248, 0.2);
+        color: #38bdf8;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-weight: 800;
+        font-size: 0.72rem;
+        border: 1px solid rgba(56, 189, 248, 0.4);
+    }
+    .pump-badge-off {
+        background: rgba(100, 116, 139, 0.2);
+        color: #94a3b8;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-weight: 800;
+        font-size: 0.72rem;
+        border: 1px solid #334155;
+    }
 </style>
 """, unsafe_allow_html=True)
 
 
 # --- 3. Inisialisasi Data Session State ---
+if "pump_thresh" not in st.session_state:
+    st.session_state.pump_thresh = 25.0
+
+if "pump_mode" not in st.session_state:
+    st.session_state.pump_mode = "Otomatis"
+
+if "pump_status" not in st.session_state:
+    st.session_state.pump_status = False
+
 if "history" not in st.session_state:
     now = datetime.now()
     seed = []
     for i in range(12, 0, -1):
         ts = datetime.fromtimestamp(now.timestamp() - i * 3)
+        w_val = round(23.6 + random.uniform(-0.3, 0.4), 1)
         seed.append({
             "timestamp": ts.strftime("%H:%M:%S"),
             "suhu_udara": round(26.2 + random.uniform(-0.5, 0.6), 1),
             "kelembapan": round(68.0 + random.uniform(-1.8, 2.0), 1),
-            "suhu_air": round(23.6 + random.uniform(-0.3, 0.4), 1),
+            "suhu_air": w_val,
+            "pompa": "HIDUP" if w_val > 25.0 else "STANDBY"
         })
     st.session_state.history = seed
 
@@ -196,6 +246,18 @@ with st.sidebar:
         index=0 if st.session_state.sim_running else 1
     )
 
+    st.markdown("#### 🌀 Pompa Sirkulasi Air Nutrisi:")
+    st.session_state.pump_thresh = st.slider(
+        "Ambang Suhu Pompa Hidup (°C):",
+        20.0, 30.0, float(st.session_state.pump_thresh), 0.5,
+        help="Ketika suhu air melampaui batas ini, pompa memutar air agar panas merata dan mendingin."
+    )
+    st.session_state.pump_mode = st.selectbox(
+        "Mode Operasi Pompa:",
+        ["Otomatis (Sesuai Suhu Air)", "Manual - Paksa Hidup (ON)", "Manual - Paksa Mati (OFF)"],
+        index=0 if st.session_state.pump_mode == "Otomatis" else (1 if "ON" in st.session_state.pump_mode else 2)
+    )
+
     if mode == "Simulasi Otomatis (Live)":
         st.session_state.sim_running = True
         interval = st.slider("Interval Detik:", 1, 5, 2)
@@ -207,11 +269,13 @@ with st.sidebar:
         m_water = st.slider("Suhu Air (°C):", 15.0, 35.0, 23.5, 0.5)
 
         if st.button("Terapkan ke Layar", use_container_width=True):
+            p_stat = (m_water > st.session_state.pump_thresh)
             st.session_state.history.append({
                 "timestamp": datetime.now().strftime("%H:%M:%S"),
                 "suhu_udara": m_air,
                 "kelembapan": m_hum,
-                "suhu_air": m_water
+                "suhu_air": m_water,
+                "pompa": "HIDUP" if p_stat else "STANDBY"
             })
             if len(st.session_state.history) > 20:
                 st.session_state.history.pop(0)
@@ -231,18 +295,37 @@ with st.sidebar:
         st.rerun()
 
 
-# --- 5. Simulasi Data Terkini ---
+# --- 5. Simulasi Data Terkini & Fisika Pendinginan Pompa ---
+last = st.session_state.history[-1]
+
+# Hitung Status Pompa Berdasarkan Mode
+if "Manual - Paksa Hidup" in st.session_state.pump_mode:
+    st.session_state.pump_status = True
+elif "Manual - Paksa Mati" in st.session_state.pump_mode:
+    st.session_state.pump_status = False
+else:
+    # Otomatis: Histeresis
+    if last["suhu_air"] > st.session_state.pump_thresh:
+        st.session_state.pump_status = True
+    elif last["suhu_air"] <= (st.session_state.pump_thresh - 0.4):
+        st.session_state.pump_status = False
+
 if st.session_state.sim_running:
-    last = st.session_state.history[-1]
     n_air = round(max(18.0, min(36.0, last["suhu_udara"] + random.uniform(-0.3, 0.3))), 1)
     n_hum = round(max(45.0, min(90.0, last["kelembapan"] + random.uniform(-0.6, 0.6))), 1)
-    n_water = round(max(16.0, min(30.0, last["suhu_air"] + random.uniform(-0.2, 0.2))), 1)
+
+    # Fisika Pompa Air: Jika hidup memutar air mendinginkan nutrisi ke titik ideal
+    if st.session_state.pump_status:
+        n_water = round(max(22.0, last["suhu_air"] - random.uniform(0.18, 0.35)), 1)
+    else:
+        n_water = round(max(16.0, min(31.0, last["suhu_air"] + random.uniform(-0.15, 0.28))), 1)
 
     st.session_state.history.append({
         "timestamp": datetime.now().strftime("%H:%M:%S"),
         "suhu_udara": n_air,
         "kelembapan": n_hum,
-        "suhu_air": n_water
+        "suhu_air": n_water,
+        "pompa": "HIDUP" if st.session_state.pump_status else "STANDBY"
     })
     if len(st.session_state.history) > 20:
         st.session_state.history.pop(0)
@@ -380,25 +463,55 @@ with tab_water:
     st.info("💡 Suhu air 18°C - 25°C memastikan kadar oksigen terlarut (DO) maksimal bagi akar.")
 
 
-# --- 9. Mini Stats Row ---
+# --- 9. Indikator Status Pompa Air Sirkulasi & Mini Stats Row ---
+p_badge_cls = "pump-badge-on" if st.session_state.pump_status else "pump-badge-off"
+p_badge_txt = "HIDUP (Memutar Air)" if st.session_state.pump_status else "STANDBY (Mati)"
+p_hint = f"🔥 Air nutrisi hangat (> {st.session_state.pump_thresh:.1f}°C). Pompa <strong>memutar air</strong> agar panas merata & dingin." if st.session_state.pump_status else f"❄️ Air nutrisi aman (≤ {st.session_state.pump_thresh:.1f}°C). Pompa standby hemat daya."
+p_card_cls = "pump-card active" if st.session_state.pump_status else "pump-card"
+p_icon = "🌀" if st.session_state.pump_status else "💤"
+
+st.markdown(f"""
+<div class="{p_card_cls}">
+    <div style="display:flex; align-items:center; gap:10px;">
+        <span class="pump-icon">{p_icon}</span>
+        <div>
+            <div style="display:flex; align-items:center; gap:6px;">
+                <span style="color:#94a3b8; font-size:0.78rem; font-weight:600;">Pompa Sirkulasi:</span>
+                <span class="{p_badge_cls}">{p_badge_txt}</span>
+            </div>
+            <p style="margin:2px 0 0 0; font-size:0.68rem; color:#94a3b8; line-height:1.25;">{p_hint}</p>
+        </div>
+    </div>
+    <span style="font-size:0.68rem; font-weight:700; color:#38bdf8; background:#101622; padding:3px 8px; border-radius:6px; border:1px solid #222f42; flex-shrink:0;">
+        {st.session_state.pump_mode.split()[0]}
+    </span>
+</div>
+""", unsafe_allow_html=True)
+
 df_hist = pd.DataFrame(st.session_state.history)
 avg_a = df_hist["suhu_udara"].mean()
 avg_h = df_hist["kelembapan"].mean()
 avg_w = df_hist["suhu_air"].mean()
+pump_live_txt = "AKTIF (Memutar)" if st.session_state.pump_status else "STANDBY (Mati)"
+pump_live_color = "#38bdf8" if st.session_state.pump_status else "#64748b"
 
 st.markdown(f"""
 <div class="mini-stats-row">
     <div class="mini-card">
-        <span class="mini-card-lbl">Rata-rata Suhu</span>
+        <span class="mini-card-lbl">Rata-rata Suhu Udara</span>
         <span class="mini-card-val">{avg_a:.1f} °C</span>
     </div>
     <div class="mini-card">
-        <span class="mini-card-lbl">Rata-rata Hum</span>
+        <span class="mini-card-lbl">Rata-rata Kelembapan</span>
         <span class="mini-card-val">{avg_h:.1f} %</span>
     </div>
     <div class="mini-card">
-        <span class="mini-card-lbl">Rata-rata Air</span>
+        <span class="mini-card-lbl">Rata-rata Suhu Air</span>
         <span class="mini-card-val">{avg_w:.1f} °C</span>
+    </div>
+    <div class="mini-card">
+        <span class="mini-card-lbl">Status Pompa Air</span>
+        <span class="mini-card-val" style="color: {pump_live_color}; font-size: 0.8rem;">{pump_live_txt}</span>
     </div>
 </div>
 """, unsafe_allow_html=True)
