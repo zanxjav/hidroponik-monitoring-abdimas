@@ -1,12 +1,17 @@
 /**
- * Smart Hydroponic Monitoring System - Mobile Dashboard Engine
- * Dioptimalkan untuk Smartphone & Interaksi Sentuh
+ * Smart Hydroponic Monitoring System - Mobile Dashboard Engine (V2)
+ * Pure Trigonometric Symmetrical Needle & Touch-Optimized Controller
  */
 
 document.addEventListener('DOMContentLoaded', () => {
-  const ARC_TOTAL = 235.62; // PI * 75
+  // --- Constants ---
+  const ARC_TOTAL = 213.63; // PI * 68
+  const CENTER_X = 100;
+  const CENTER_Y = 95;
+  const NEEDLE_LEN = 50;
+  const ARC_RADIUS = 68;
 
-  // Ambang batas parameter hidroponik
+  // Sensor Ranges
   const RANGES = {
     airTemp: { min: 0, max: 50, idealMin: 22, idealMax: 28 },
     humidity: { min: 0, max: 100, idealMin: 60, idealMax: 80 },
@@ -15,82 +20,84 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // State
   const state = {
-    airTemp: 26.4,
-    humidity: 68.2,
-    waterTemp: 23.8,
+    airTemp: 25.8,
+    humidity: 70.2,
+    waterTemp: 23.3,
     isSimulating: true,
     history: [],
     maxPoints: 20,
-    currentTab: 'all',
+    currentFilter: 'all',
   };
 
   // DOM Elements
   const els = {
-    // Live header
+    // Header & Badges
     liveClock: document.getElementById('liveClock'),
-    livePill: document.getElementById('livePill'),
-    liveText: document.getElementById('liveText'),
+    liveBadge: document.getElementById('liveBadge'),
+    liveBadgeText: document.getElementById('liveBadgeText'),
+    btnSettings: document.getElementById('btnSettings'),
 
     // Eco Banner
-    ecoBanner: document.getElementById('ecoBanner'),
+    ecoCard: document.getElementById('ecoCard'),
     ecoIcon: document.getElementById('ecoIcon'),
     ecoTitle: document.getElementById('ecoTitle'),
     ecoDesc: document.getElementById('ecoDesc'),
 
-    // Dials - Air Temp
-    fillAirTemp: document.getElementById('fillAirTemp'),
+    // Air Temp Dial
+    arcAirTemp: document.getElementById('arcAirTemp'),
     needleAirTemp: document.getElementById('needleAirTemp'),
+    beadAirTemp: document.getElementById('beadAirTemp'),
     valAirTemp: document.getElementById('valAirTemp'),
     badgeAirTemp: document.getElementById('badgeAirTemp'),
-    hintAirTemp: document.getElementById('hintAirTemp'),
 
-    // Dials - Humidity
-    fillHumidity: document.getElementById('fillHumidity'),
+    // Humidity Dial
+    arcHumidity: document.getElementById('arcHumidity'),
     needleHumidity: document.getElementById('needleHumidity'),
+    beadHumidity: document.getElementById('beadHumidity'),
     valHumidity: document.getElementById('valHumidity'),
     badgeHumidity: document.getElementById('badgeHumidity'),
-    hintHumidity: document.getElementById('hintHumidity'),
 
-    // Dials - Water Temp
-    fillWaterTemp: document.getElementById('fillWaterTemp'),
+    // Water Temp Dial
+    arcWaterTemp: document.getElementById('arcWaterTemp'),
     needleWaterTemp: document.getElementById('needleWaterTemp'),
+    beadWaterTemp: document.getElementById('beadWaterTemp'),
     valWaterTemp: document.getElementById('valWaterTemp'),
     badgeWaterTemp: document.getElementById('badgeWaterTemp'),
-    hintWaterTemp: document.getElementById('hintWaterTemp'),
 
-    // Mini Stats
+    // Mini Summary
     avgAirTemp: document.getElementById('avgAirTemp'),
     avgHumidity: document.getElementById('avgHumidity'),
     avgWaterTemp: document.getElementById('avgWaterTemp'),
 
-    // Mobile Bottom Actions
+    // Tabs & Cards
+    tabItems: document.querySelectorAll('.tab-item'),
+    dialCards: document.querySelectorAll('.dial-card'),
+
+    // Bottom Action Bar
     btnSimToggle: document.getElementById('btnSimToggle'),
     simIcon: document.getElementById('simIcon'),
     simBtnText: document.getElementById('simBtnText'),
-    btnOpenManual: document.getElementById('btnOpenManual'),
-    btnSettings: document.getElementById('btnSettings'),
+    btnOpenModal: document.getElementById('btnOpenModal'),
 
-    // Modal Sheet
-    settingsModal: document.getElementById('settingsModal'),
-    btnCloseModal: document.getElementById('btnCloseModal'),
+    // Bottom Sheet Modal
+    settingsSheet: document.getElementById('settingsSheet'),
+    btnCloseSheet: document.getElementById('btnCloseSheet'),
     optAutoSim: document.getElementById('optAutoSim'),
     optManual: document.getElementById('optManual'),
     sliderAir: document.getElementById('sliderAir'),
-    sliderAirVal: document.getElementById('sliderAirVal'),
     sliderHum: document.getElementById('sliderHum'),
-    sliderHumVal: document.getElementById('sliderHumVal'),
     sliderWater: document.getElementById('sliderWater'),
-    sliderWaterVal: document.getElementById('sliderWaterVal'),
+    labelSliderAir: document.getElementById('labelSliderAir'),
+    labelSliderHum: document.getElementById('labelSliderHum'),
+    labelSliderWater: document.getElementById('labelSliderWater'),
     btnApplyManual: document.getElementById('btnApplyManual'),
 
-    // Chart & Tools
+    // Chart & Export
     btnExportCSV: document.getElementById('btnExportCSV'),
     btnResetChart: document.getElementById('btnResetChart'),
     toggleAirTemp: document.getElementById('toggleAirTemp'),
     toggleHumidity: document.getElementById('toggleHumidity'),
     toggleWaterTemp: document.getElementById('toggleWaterTemp'),
-    tabButtons: document.querySelectorAll('.tab-btn'),
-    cards: document.querySelectorAll('.mobile-dial-card'),
   };
 
   // --- Clock Updater ---
@@ -104,125 +111,149 @@ document.addEventListener('DOMContentLoaded', () => {
   setInterval(updateClock, 1000);
   updateClock();
 
-  // --- Gauge Engine ---
-  function updateDial(val, cfg, fillArc, needle, valEl, badgeEl, hintEl) {
-    const clamped = Math.min(Math.max(val, cfg.min), cfg.max);
+  // --- Pure Trigonometric Dial Gauge Engine ---
+  /**
+   * Updates an SVG dial gauge with 100% mathematical symmetry
+   * @param {number} value
+   * @param {object} cfg
+   * @param {SVGPathElement} arc
+   * @param {SVGLineElement} needle
+   * @param {SVGCircleElement} bead
+   * @param {HTMLElement} valDisplay
+   * @param {HTMLElement} badge
+   */
+  function updateGauge(value, cfg, arc, needle, bead, valDisplay, badge) {
+    const clamped = Math.min(Math.max(value, cfg.min), cfg.max);
     const fraction = (clamped - cfg.min) / (cfg.max - cfg.min);
 
-    // Update Arc
-    if (fillArc) {
-      fillArc.style.strokeDashoffset = ARC_TOTAL * (1 - fraction);
+    // Progress Arc Offset
+    if (arc) {
+      const offset = ARC_TOTAL * (1 - fraction);
+      arc.style.strokeDashoffset = offset;
     }
 
-    // Update Needle (-90deg to +90deg around 100, 105)
+    // Mathematical Angle: from PI (180deg / left) to 0 (0deg / right)
+    const angleRad = Math.PI * (1 - fraction);
+
+    // Needle Tip Coordinates (Pivot is locked at CENTER_X, CENTER_Y)
+    const needleX2 = CENTER_X + NEEDLE_LEN * Math.cos(angleRad);
+    const needleY2 = CENTER_Y - NEEDLE_LEN * Math.sin(angleRad);
+
     if (needle) {
-      const angle = -90 + (fraction * 180);
-      needle.setAttribute('transform', `rotate(${angle}, 100, 105)`);
+      needle.setAttribute('x1', CENTER_X);
+      needle.setAttribute('y1', CENTER_Y);
+      needle.setAttribute('x2', needleX2.toFixed(2));
+      needle.setAttribute('y2', needleY2.toFixed(2));
     }
 
-    // Update Value Text
-    if (valEl) valEl.textContent = val.toFixed(1);
+    // Glowing Bead Coordinates on the Arc Edge
+    const beadX = CENTER_X + ARC_RADIUS * Math.cos(angleRad);
+    const beadY = CENTER_Y - ARC_RADIUS * Math.sin(angleRad);
 
-    // Status Badge & Hint
-    if (badgeEl && hintEl) {
-      badgeEl.className = 'status-chip';
-      if (val >= cfg.idealMin && val <= cfg.idealMax) {
-        badgeEl.classList.add('chip-optimal');
-        badgeEl.textContent = 'Optimal';
-        hintEl.textContent = 'Normal';
-        hintEl.style.color = '#38bdf8';
+    if (bead) {
+      bead.setAttribute('cx', beadX.toFixed(2));
+      bead.setAttribute('cy', beadY.toFixed(2));
+    }
+
+    // Value Number Display
+    if (valDisplay) {
+      valDisplay.textContent = value.toFixed(1);
+    }
+
+    // Status Badge Logic
+    if (badge) {
+      badge.className = 'status-pill';
+      if (value >= cfg.idealMin && value <= cfg.idealMax) {
+        badge.classList.add('pill-optimal');
+        badge.textContent = 'Optimal';
       } else if (
-        (val >= cfg.idealMin - 2 && val < cfg.idealMin) ||
-        (val > cfg.idealMax && val <= cfg.idealMax + 3)
+        (value >= cfg.idealMin - 2 && value < cfg.idealMin) ||
+        (value > cfg.idealMax && value <= cfg.idealMax + 3)
       ) {
-        badgeEl.classList.add('chip-warning');
-        badgeEl.textContent = 'Waspada';
-        hintEl.textContent = val < cfg.idealMin ? 'Agak Rendah' : 'Agak Tinggi';
-        hintEl.style.color = '#fbbf24';
+        badge.classList.add('pill-warning');
+        badge.textContent = 'Waspada';
       } else {
-        badgeEl.classList.add('chip-danger');
-        badgeEl.textContent = 'Perhatian';
-        hintEl.textContent = val < cfg.idealMin ? 'Terlalu Rendah' : 'Terlalu Tinggi';
-        hintEl.style.color = '#f87171';
+        badge.classList.add('pill-danger');
+        badge.textContent = 'Perhatian';
       }
     }
   }
 
-  function renderAllDials() {
-    updateDial(state.airTemp, RANGES.airTemp, els.fillAirTemp, els.needleAirTemp, els.valAirTemp, els.badgeAirTemp, els.hintAirTemp);
-    updateDial(state.humidity, RANGES.humidity, els.fillHumidity, els.needleHumidity, els.valHumidity, els.badgeHumidity, els.hintHumidity);
-    updateDial(state.waterTemp, RANGES.waterTemp, els.fillWaterTemp, els.needleWaterTemp, els.valWaterTemp, els.badgeWaterTemp, els.hintWaterTemp);
+  function renderAllGauges() {
+    updateGauge(state.airTemp, RANGES.airTemp, els.arcAirTemp, els.needleAirTemp, els.beadAirTemp, els.valAirTemp, els.badgeAirTemp);
+    updateGauge(state.humidity, RANGES.humidity, els.arcHumidity, els.needleHumidity, els.beadHumidity, els.valHumidity, els.badgeHumidity);
+    updateGauge(state.waterTemp, RANGES.waterTemp, els.arcWaterTemp, els.needleWaterTemp, els.beadWaterTemp, els.valWaterTemp, els.badgeWaterTemp);
 
     updateEcoBanner();
-    updateMiniStats();
+    updateMiniSummaries();
   }
 
-  // --- Eco Banner Logic (Ramah Pengguna) ---
+  // --- Eco Banner Logic ---
   function updateEcoBanner() {
     let optimalCount = 0;
-    let issues = [];
+    let alerts = [];
 
     if (state.airTemp >= RANGES.airTemp.idealMin && state.airTemp <= RANGES.airTemp.idealMax) {
       optimalCount++;
     } else {
-      issues.push(state.airTemp > RANGES.airTemp.idealMax ? 'Suhu udara panas' : 'Suhu udara dingin');
+      alerts.push(state.airTemp > RANGES.airTemp.idealMax ? 'Suhu udara panas' : 'Suhu udara dingin');
     }
 
     if (state.humidity >= RANGES.humidity.idealMin && state.humidity <= RANGES.humidity.idealMax) {
       optimalCount++;
     } else {
-      issues.push(state.humidity > RANGES.humidity.idealMax ? 'Udara lembap' : 'Udara kering');
+      alerts.push(state.humidity > RANGES.humidity.idealMax ? 'Kelembapan tinggi' : 'Kelembapan rendah');
     }
 
     if (state.waterTemp >= RANGES.waterTemp.idealMin && state.waterTemp <= RANGES.waterTemp.idealMax) {
       optimalCount++;
     } else {
-      issues.push(state.waterTemp > RANGES.waterTemp.idealMax ? 'Air hangat' : 'Air dingin');
+      alerts.push(state.waterTemp > RANGES.waterTemp.idealMax ? 'Air nutrisi hangat' : 'Air nutrisi dingin');
     }
 
     if (optimalCount === 3) {
       els.ecoIcon.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
       els.ecoIcon.style.color = '#38bdf8';
-      els.ecoTitle.textContent = 'Kondisi Hidroponik Prima';
-      els.ecoDesc.textContent = 'Semua parameter dalam rentang ideal untuk pertumbuhan tanaman.';
+      els.ecoTitle.textContent = 'Kondisi Hidroponik Optimal';
+      els.ecoDesc.textContent = 'Semua parameter (suhu & kelembapan) berada pada rentang ideal pertumbuhan tanaman.';
     } else if (optimalCount >= 2) {
       els.ecoIcon.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
       els.ecoIcon.style.color = '#fbbf24';
       els.ecoTitle.textContent = 'Kondisi Cukup Baik';
-      els.ecoDesc.textContent = `Perhatian kecil: ${issues.join(', ')}.`;
+      els.ecoDesc.textContent = `Catatan: ${alerts.join(', ')}.`;
     } else {
       els.ecoIcon.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i>';
       els.ecoIcon.style.color = '#f87171';
       els.ecoTitle.textContent = 'Perlu Tindakan';
-      els.ecoDesc.textContent = `Penyesuaian diperlukan untuk: ${issues.join(', ')}.`;
+      els.ecoDesc.textContent = `Perhatian penting: ${alerts.join(', ')}. Segera periksa kebun!`;
     }
   }
 
-  // --- Mini Stats ---
-  function updateMiniStats() {
+  // --- Mini Summaries ---
+  function updateMiniSummaries() {
     if (state.history.length === 0) return;
-    const len = state.history.length;
-    const avgAir = (state.history.reduce((a, b) => a + b.airTemp, 0) / len).toFixed(1);
-    const avgHum = (state.history.reduce((a, b) => a + b.humidity, 0) / len).toFixed(1);
-    const avgWater = (state.history.reduce((a, b) => a + b.waterTemp, 0) / len).toFixed(1);
+    const count = state.history.length;
+    const avgAir = (state.history.reduce((acc, c) => acc + c.airTemp, 0) / count).toFixed(1);
+    const avgHum = (state.history.reduce((acc, c) => acc + c.humidity, 0) / count).toFixed(1);
+    const avgWater = (state.history.reduce((acc, c) => acc + c.waterTemp, 0) / count).toFixed(1);
 
     if (els.avgAirTemp) els.avgAirTemp.textContent = `${avgAir} °C`;
     if (els.avgHumidity) els.avgHumidity.textContent = `${avgHum} %`;
     if (els.avgWaterTemp) els.avgWaterTemp.textContent = `${avgWater} °C`;
   }
 
-  // --- Tab Filters (Mobile Focus Single Parameter) ---
-  els.tabButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
-      els.tabButtons.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
+  // --- Mobile Filter Tabs (Semua / Suhu / Kelembapan / Air) ---
+  els.tabItems.forEach(tab => {
+    tab.addEventListener('click', () => {
+      els.tabItems.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
 
-      const target = btn.getAttribute('data-tab');
-      state.currentTab = target;
+      const filter = tab.getAttribute('data-filter');
+      state.currentFilter = filter;
 
-      els.cards.forEach(card => {
+      els.dialCards.forEach(card => {
         const cat = card.getAttribute('data-category');
-        if (target === 'all' || cat === target) {
+        if (filter === 'all' || cat === filter) {
           card.classList.remove('hidden');
         } else {
           card.classList.add('hidden');
@@ -231,7 +262,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // --- Chart.js Mobile Setup ---
+  // --- Chart.js Mobile Telemetry ---
   let chart = null;
 
   function initChart() {
@@ -284,12 +315,12 @@ document.addEventListener('DOMContentLoaded', () => {
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        animation: { duration: 300 },
+        animation: { duration: 250 },
         interaction: { mode: 'index', intersect: false },
         plugins: {
           legend: { display: false },
           tooltip: {
-            backgroundColor: 'rgba(21, 29, 42, 0.95)',
+            backgroundColor: 'rgba(20, 28, 40, 0.95)',
             borderColor: '#38bdf8',
             borderWidth: 1,
             titleFont: { size: 11 },
@@ -333,7 +364,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  function pushData(air, hum, water) {
+  function pushDataPoint(air, hum, water) {
     const now = new Date();
     const t = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
 
@@ -362,19 +393,19 @@ document.addEventListener('DOMContentLoaded', () => {
       chart.update('none');
     }
 
-    renderAllDials();
+    renderAllGauges();
   }
 
-  function seedData() {
+  function seedInitialData() {
     const now = Date.now();
-    for (let i = 10; i >= 0; i--) {
-      const d = new Date(now - i * 3000);
-      const t = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`;
-      const a = +(25.8 + Math.sin(i / 2) * 0.8).toFixed(1);
-      const h = +(67.5 + Math.cos(i / 2) * 2.0).toFixed(1);
-      const w = +(23.4 + Math.sin(i / 3) * 0.5).toFixed(1);
+    for (let i = 12; i >= 0; i--) {
+      const past = new Date(now - i * 3000);
+      const t = `${String(past.getHours()).padStart(2, '0')}:${String(past.getMinutes()).padStart(2, '0')}:${String(past.getSeconds()).padStart(2, '0')}`;
+      const a = +(25.8 + Math.sin(i / 2) * 0.7).toFixed(1);
+      const h = +(70.2 + Math.cos(i / 2) * 1.8).toFixed(1);
+      const w = +(23.3 + Math.sin(i / 3) * 0.4).toFixed(1);
 
-      state.history.push({ time: t, iso: d.toISOString(), airTemp: a, humidity: h, waterTemp: w });
+      state.history.push({ time: t, iso: past.toISOString(), airTemp: a, humidity: h, waterTemp: w });
       if (chart) {
         chart.data.labels.push(t);
         chart.data.datasets[0].data.push(a);
@@ -387,13 +418,13 @@ document.addEventListener('DOMContentLoaded', () => {
     state.humidity = last.humidity;
     state.waterTemp = last.waterTemp;
     if (chart) chart.update();
-    renderAllDials();
+    renderAllGauges();
   }
 
   // --- Real-time Simulation Engine ---
-  let timer = null;
+  let simTimer = null;
 
-  function stepSim() {
+  function runSimStep() {
     if (!state.isSimulating) return;
     const da = (Math.random() - 0.48) * 0.35;
     const dh = (Math.random() - 0.49) * 0.7;
@@ -403,75 +434,75 @@ document.addEventListener('DOMContentLoaded', () => {
     state.humidity = Math.min(Math.max(+(state.humidity + dh).toFixed(1), 45), 90);
     state.waterTemp = Math.min(Math.max(+(state.waterTemp + dw).toFixed(1), 16), 30);
 
-    pushData(state.airTemp, state.humidity, state.waterTemp);
+    pushDataPoint(state.airTemp, state.humidity, state.waterTemp);
   }
 
-  function startSim() {
-    if (timer) clearInterval(timer);
-    timer = setInterval(stepSim, 2500);
+  function startSimulation() {
+    if (simTimer) clearInterval(simTimer);
+    simTimer = setInterval(runSimStep, 2500);
     state.isSimulating = true;
-    updateSimUI();
+    updateSimButtonUI();
   }
 
-  function stopSim() {
-    if (timer) clearInterval(timer);
+  function stopSimulation() {
+    if (simTimer) clearInterval(simTimer);
     state.isSimulating = false;
-    updateSimUI();
+    updateSimButtonUI();
   }
 
-  function updateSimUI() {
+  function updateSimButtonUI() {
     if (state.isSimulating) {
       if (els.simIcon) els.simIcon.className = 'fa-solid fa-pause';
       if (els.simBtnText) els.simBtnText.textContent = 'Jeda Simulasi';
-      if (els.liveText) els.liveText.textContent = 'LIVE';
-      if (els.livePill) els.livePill.style.borderColor = 'rgba(56, 189, 248, 0.4)';
+      if (els.liveBadgeText) els.liveBadgeText.textContent = 'LIVE';
+      if (els.liveBadge) els.liveBadge.style.borderColor = 'rgba(56, 189, 248, 0.4)';
     } else {
       if (els.simIcon) els.simIcon.className = 'fa-solid fa-play';
       if (els.simBtnText) els.simBtnText.textContent = 'Lanjut Simulasi';
-      if (els.liveText) els.liveText.textContent = 'JEDA';
-      if (els.livePill) els.livePill.style.borderColor = '#64748b';
+      if (els.liveBadgeText) els.liveBadgeText.textContent = 'JEDA';
+      if (els.liveBadge) els.liveBadge.style.borderColor = '#64748b';
     }
   }
 
   if (els.btnSimToggle) {
     els.btnSimToggle.addEventListener('click', () => {
-      if (state.isSimulating) stopSim();
-      else startSim();
+      if (state.isSimulating) stopSimulation();
+      else startSimulation();
     });
   }
 
-  // --- Bottom Sheet & Mobile Sliders ---
+  // --- Bottom Sheet Controls ---
   const openSheet = () => {
-    if (els.settingsModal) els.settingsModal.classList.add('active');
+    if (els.settingsSheet) els.settingsSheet.classList.add('active');
   };
   const closeSheet = () => {
-    if (els.settingsModal) els.settingsModal.classList.remove('active');
+    if (els.settingsSheet) els.settingsSheet.classList.remove('active');
   };
 
-  if (els.btnOpenManual) els.btnOpenManual.addEventListener('click', openSheet);
+  if (els.btnOpenModal) els.btnOpenModal.addEventListener('click', openSheet);
   if (els.btnSettings) els.btnSettings.addEventListener('click', openSheet);
-  if (els.btnCloseModal) els.btnCloseModal.addEventListener('click', closeSheet);
+  if (els.btnCloseSheet) els.btnCloseSheet.addEventListener('click', closeSheet);
 
-  if (els.settingsModal) {
-    els.settingsModal.addEventListener('click', (e) => {
-      if (e.target === els.settingsModal) closeSheet();
+  if (els.settingsSheet) {
+    els.settingsSheet.addEventListener('click', (e) => {
+      if (e.target === els.settingsSheet) closeSheet();
     });
   }
 
-  // Sliders input handling
-  if (els.sliderAir && els.sliderAirVal) {
+  // Sliders
+  if (els.sliderAir && els.labelSliderAir) {
     els.sliderAir.addEventListener('input', (e) => {
-      els.sliderAirVal.textContent = `${parseFloat(e.target.value).toFixed(1)} °C`;
+      els.labelSliderAir.textContent = `${parseFloat(e.target.value).toFixed(1)} °C`;
     });
   }
-  if (els.sliderHum && els.sliderHumVal) {
+  if (els.sliderHum && els.labelSliderHum) {
     els.sliderHum.addEventListener('input', (e) => {
-      els.sliderHumVal.textContent = `${e.target.value} %`;
+      els.labelSliderHum.textContent = `${e.target.value} %`;
     });
   }
-  if (els.sliderWater && els.sliderWaterVal) {
+  if (els.sliderWater && els.labelSliderWater) {
     els.sliderWater.addEventListener('input', (e) => {
-      els.sliderWaterVal.textContent = `${parseFloat(e.target.value).toFixed(1)} °C`;
+      els.labelSliderWater.textContent = `${parseFloat(e.target.value).toFixed(1)} °C`;
     });
   }
 
@@ -479,18 +510,18 @@ document.addEventListener('DOMContentLoaded', () => {
     els.optAutoSim.addEventListener('click', () => {
       els.optAutoSim.classList.add('active');
       els.optManual.classList.remove('active');
-      startSim();
+      startSimulation();
     });
     els.optManual.addEventListener('click', () => {
       els.optManual.classList.add('active');
       els.optAutoSim.classList.remove('active');
-      stopSim();
+      stopSimulation();
     });
   }
 
   if (els.btnApplyManual) {
     els.btnApplyManual.addEventListener('click', () => {
-      stopSim();
+      stopSimulation();
       if (els.optManual) {
         els.optManual.classList.add('active');
         els.optAutoSim.classList.remove('active');
@@ -502,7 +533,7 @@ document.addEventListener('DOMContentLoaded', () => {
       state.airTemp = a;
       state.humidity = h;
       state.waterTemp = w;
-      pushData(a, h, w);
+      pushDataPoint(a, h, w);
       closeSheet();
     });
   }
@@ -532,7 +563,7 @@ document.addEventListener('DOMContentLoaded', () => {
         chart.data.datasets.forEach(d => (d.data = []));
         chart.update();
       }
-      pushData(state.airTemp, state.humidity, state.waterTemp);
+      pushDataPoint(state.airTemp, state.humidity, state.waterTemp);
     });
   }
 
@@ -554,17 +585,17 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Global Hook
+  // Global Hook for ESP32
   window.updateHydroponicData = (a, h, w) => {
-    stopSim();
+    stopSimulation();
     state.airTemp = parseFloat(a);
     state.humidity = parseFloat(h);
     state.waterTemp = parseFloat(w);
-    pushData(state.airTemp, state.humidity, state.waterTemp);
+    pushDataPoint(state.airTemp, state.humidity, state.waterTemp);
   };
 
   // Bootstrap
   initChart();
-  seedData();
-  startSim();
+  seedInitialData();
+  startSimulation();
 });

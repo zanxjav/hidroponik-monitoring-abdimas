@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Hidroponik Smart Monitor - Mobile Dashboard</title>
-  <meta name="description" content="Dashboard pemantauan suhu, kelembapan, dan suhu air hidroponik ramah pengguna, dioptimalkan khusus untuk layar smartphone.">
-  <meta name="theme-color" content="#0d131d">
+  <title>Smart Hydroponic Monitor - Mobile Dashboard</title>
+  <meta name="description" content="Dashboard monitoring suhu, kelembapan, dan suhu air hidroponik mobile-first dengan indikator dial simetris dan grafik riwayat sensor.">
+  <meta name="theme-color" content="#0b0f17">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-  <!-- Google Fonts: Plus Jakarta Sans -->
+  <!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600;700;800&display=swap" rel="stylesheet">
 
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
@@ -23,297 +23,321 @@
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <!-- Ambient Mobile Background -->
-  <div class="mobile-bg-glow glow-top"></div>
-  <div class="mobile-bg-glow glow-bottom"></div>
 
-  <!-- Mobile Shell Container -->
-  <div class="mobile-shell">
+  <!-- Background Ambient Glow -->
+  <div class="ambient-glow glow-top"></div>
+  <div class="ambient-glow glow-bottom"></div>
+
+  <!-- Dedicated Mobile Container (Max 440px on desktop, 100% on phones) -->
+  <div class="mobile-container">
     
-    <!-- Top Mobile App Bar -->
-    <header class="mobile-appbar">
-      <div class="appbar-brand">
-        <div class="brand-icon">
-          <i class="fa-solid fa-leaf"></i>
+    <!-- Top Mobile App Header -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-logo">
+          <i class="fa-solid fa-seedling"></i>
         </div>
-        <div>
+        <div class="brand-text">
           <h1>Hidroponik <span>Monitor</span></h1>
-          <span class="brand-sub">Sistem Telemetri Abdimas</span>
+          <p>Sistem Telemetri Abdimas</p>
         </div>
       </div>
 
-      <div class="appbar-actions">
-        <div class="live-pill" id="livePill" title="Status koneksi sensor">
-          <span class="live-dot"></span>
-          <span id="liveText">LIVE</span>
+      <div class="header-right">
+        <div class="live-badge" id="liveBadge">
+          <span class="pulsing-dot"></span>
+          <span id="liveBadgeText">LIVE</span>
         </div>
-        <button class="icon-btn" id="btnSettings" aria-label="Pengaturan">
+        <button class="btn-icon" id="btnSettings" aria-label="Buka Setelan">
           <i class="fa-solid fa-sliders"></i>
         </button>
       </div>
     </header>
 
-    <!-- Eco Health Status Banner (Ramah Pengguna) -->
-    <div class="eco-banner" id="ecoBanner">
-      <div class="eco-banner-icon" id="ecoIcon">
+    <!-- Eco-Status Banner (User Friendly & Bahasa Indonesia Jelas) -->
+    <div class="eco-card" id="ecoCard">
+      <div class="eco-icon-wrap" id="ecoIcon">
         <i class="fa-solid fa-circle-check"></i>
       </div>
-      <div class="eco-banner-info">
-        <strong id="ecoTitle">Kondisi Hidroponik Prima</strong>
+      <div class="eco-details">
+        <h2 id="ecoTitle">Kondisi Hidroponik Optimal</h2>
         <p id="ecoDesc">Semua parameter (suhu &amp; kelembapan) berada pada rentang ideal pertumbuhan tanaman.</p>
       </div>
-      <span class="time-tag" id="liveClock">--:-- WIB</span>
+      <span class="clock-pill" id="liveClock">--:--:-- WIB</span>
     </div>
 
-    <!-- Mobile Segment Filter Tabs -->
-    <div class="filter-tabs" role="tablist">
-      <button class="tab-btn active" data-tab="all"><i class="fa-solid fa-table-cells-large"></i> Semua</button>
-      <button class="tab-btn" data-tab="temp"><i class="fa-solid fa-temperature-half"></i> Suhu Udara</button>
-      <button class="tab-btn" data-tab="hum"><i class="fa-solid fa-droplet"></i> Kelembapan</button>
-      <button class="tab-btn" data-tab="water"><i class="fa-solid fa-water"></i> Suhu Air</button>
+    <!-- Segmented Filter Tabs (Mudah disentuh jempol) -->
+    <div class="nav-tabs" role="tablist">
+      <button class="tab-item active" data-filter="all">
+        <i class="fa-solid fa-border-all"></i> Semua
+      </button>
+      <button class="tab-item" data-filter="temp">
+        <i class="fa-solid fa-temperature-half"></i> Suhu
+      </button>
+      <button class="tab-item" data-filter="hum">
+        <i class="fa-solid fa-droplet"></i> Kelembapan
+      </button>
+      <button class="tab-item" data-filter="water">
+        <i class="fa-solid fa-water"></i> Suhu Air
+      </button>
     </div>
 
-    <!-- 3 Dial Gauge Cards (Touch-Friendly Mobile Cards) -->
-    <section class="dial-section">
+    <!-- Symmetrical Mobile Dial Cards -->
+    <main class="dials-stack">
       
       <!-- Card 1: Suhu Udara -->
-      <div class="mobile-dial-card" id="cardAirTemp" data-category="temp">
-        <div class="card-top-row">
-          <div class="param-header">
-            <span class="param-badge badge-temp"><i class="fa-solid fa-temperature-half"></i> Suhu Udara</span>
-            <span class="status-chip chip-optimal" id="badgeAirTemp">Optimal</span>
+      <section class="dial-card" id="cardAirTemp" data-category="temp">
+        <div class="card-head">
+          <div class="param-title">
+            <span class="param-icon icon-air"><i class="fa-solid fa-temperature-half"></i></span>
+            <div>
+              <h3>Suhu Udara</h3>
+              <span class="sub-label">Ambient Temperature</span>
+            </div>
           </div>
-          <div class="ideal-range"><i class="fa-solid fa-bullseye"></i> Ideal: 22° - 28°C</div>
+          <span class="status-pill pill-optimal" id="badgeAirTemp">Optimal</span>
         </div>
 
-        <div class="dial-center-box">
-          <!-- Custom SVG Speedometer Dial -->
-          <div class="svg-gauge-box">
-            <svg viewBox="0 0 200 120" class="gauge-svg">
-              <path class="gauge-track" d="M 25 105 A 75 75 0 0 1 175 105" />
-              <path class="gauge-progress stroke-sky" id="fillAirTemp" d="M 25 105 A 75 75 0 0 1 175 105" />
-              <g class="needle-pivot" id="needleAirTemp" transform="rotate(-90, 100, 105)">
-                <polygon points="98,105 102,105 100.5,35 99.5,35" class="needle-body" />
-                <circle cx="100" cy="105" r="7" class="needle-cap" />
-                <circle cx="100" cy="105" r="3" class="needle-dot dot-sky" />
-              </g>
-              <text x="25" y="118" class="scale-label">0°C</text>
-              <text x="175" y="118" class="scale-label" text-anchor="end">50°C</text>
-            </svg>
-          </div>
-
-          <div class="reading-number">
-            <span class="num-val" id="valAirTemp">26.4</span>
-            <span class="num-unit">°C</span>
-          </div>
+        <!-- Perfectly Symmetrical SVG Dial Gauge -->
+        <div class="gauge-center">
+          <svg viewBox="0 0 200 115" class="dial-svg" id="svgAirTemp">
+            <!-- Background Track Arc -->
+            <path class="arc-track" d="M 32 95 A 68 68 0 0 1 168 95" />
+            <!-- Active Color Arc -->
+            <path class="arc-value stroke-sky" id="arcAirTemp" d="M 32 95 A 68 68 0 0 1 168 95" />
+            
+            <!-- Mathematical Symmetrical Needle -->
+            <line x1="100" y1="95" x2="100" y2="45" id="needleAirTemp" class="needle-pointer stroke-white" />
+            <!-- Glowing Tip Bead on Arc -->
+            <circle cx="100" cy="27" r="4.5" id="beadAirTemp" class="needle-bead fill-sky" />
+            <!-- Center Pivot Cap -->
+            <circle cx="100" cy="95" r="8" class="needle-pivot-outer" />
+            <circle cx="100" cy="95" r="3.5" class="needle-pivot-inner fill-sky" />
+            
+            <!-- Scale Marks (Rapi & Siku) -->
+            <text x="32" y="110" class="scale-text" text-anchor="start">0°C</text>
+            <text x="100" y="110" class="scale-text center" text-anchor="middle">25°C</text>
+            <text x="168" y="110" class="scale-text" text-anchor="end">50°C</text>
+          </svg>
         </div>
 
-        <div class="card-bottom-bar">
-          <span class="guide-text"><i class="fa-solid fa-circle-info"></i> Mempengaruhi laju fotosintesis daun</span>
-          <span class="quick-status" id="hintAirTemp">Normal</span>
+        <div class="card-readout">
+          <div class="big-val-group">
+            <span class="big-val" id="valAirTemp">25.8</span>
+            <span class="val-unit">°C</span>
+          </div>
+          <div class="ideal-pill">
+            <i class="fa-solid fa-bullseye"></i> Ideal: 22°C – 28°C
+          </div>
         </div>
-      </div>
+      </section>
 
       <!-- Card 2: Kelembapan Udara -->
-      <div class="mobile-dial-card" id="cardHumidity" data-category="hum">
-        <div class="card-top-row">
-          <div class="param-header">
-            <span class="param-badge badge-hum"><i class="fa-solid fa-droplet"></i> Kelembapan Udara</span>
-            <span class="status-chip chip-optimal" id="badgeHumidity">Optimal</span>
+      <section class="dial-card" id="cardHumidity" data-category="hum">
+        <div class="card-head">
+          <div class="param-title">
+            <span class="param-icon icon-hum"><i class="fa-solid fa-droplet"></i></span>
+            <div>
+              <h3>Kelembapan Udara</h3>
+              <span class="sub-label">Relative Humidity</span>
+            </div>
           </div>
-          <div class="ideal-range"><i class="fa-solid fa-bullseye"></i> Ideal: 60% - 80%</div>
+          <span class="status-pill pill-optimal" id="badgeHumidity">Optimal</span>
         </div>
 
-        <div class="dial-center-box">
-          <div class="svg-gauge-box">
-            <svg viewBox="0 0 200 120" class="gauge-svg">
-              <path class="gauge-track" d="M 25 105 A 75 75 0 0 1 175 105" />
-              <path class="gauge-progress stroke-indigo" id="fillHumidity" d="M 25 105 A 75 75 0 0 1 175 105" />
-              <g class="needle-pivot" id="needleHumidity" transform="rotate(-90, 100, 105)">
-                <polygon points="98,105 102,105 100.5,35 99.5,35" class="needle-body" />
-                <circle cx="100" cy="105" r="7" class="needle-cap" />
-                <circle cx="100" cy="105" r="3" class="needle-dot dot-indigo" />
-              </g>
-              <text x="25" y="118" class="scale-label">0%</text>
-              <text x="175" y="118" class="scale-label" text-anchor="end">100%</text>
-            </svg>
-          </div>
-
-          <div class="reading-number">
-            <span class="num-val" id="valHumidity">68.2</span>
-            <span class="num-unit">%</span>
-          </div>
+        <div class="gauge-center">
+          <svg viewBox="0 0 200 115" class="dial-svg" id="svgHumidity">
+            <path class="arc-track" d="M 32 95 A 68 68 0 0 1 168 95" />
+            <path class="arc-value stroke-indigo" id="arcHumidity" d="M 32 95 A 68 68 0 0 1 168 95" />
+            
+            <line x1="100" y1="95" x2="100" y2="45" id="needleHumidity" class="needle-pointer stroke-white" />
+            <circle cx="100" cy="27" r="4.5" id="beadHumidity" class="needle-bead fill-indigo" />
+            <circle cx="100" cy="95" r="8" class="needle-pivot-outer" />
+            <circle cx="100" cy="95" r="3.5" class="needle-pivot-inner fill-indigo" />
+            
+            <text x="32" y="110" class="scale-text" text-anchor="start">0%</text>
+            <text x="100" y="110" class="scale-text center" text-anchor="middle">50%</text>
+            <text x="168" y="110" class="scale-text" text-anchor="end">100%</text>
+          </svg>
         </div>
 
-        <div class="card-bottom-bar">
-          <span class="guide-text"><i class="fa-solid fa-circle-info"></i> Mengontrol penguapan &amp; stomata</span>
-          <span class="quick-status" id="hintHumidity">Normal</span>
+        <div class="card-readout">
+          <div class="big-val-group">
+            <span class="big-val" id="valHumidity">70.2</span>
+            <span class="val-unit">%</span>
+          </div>
+          <div class="ideal-pill">
+            <i class="fa-solid fa-bullseye"></i> Ideal: 60% – 80%
+          </div>
         </div>
-      </div>
+      </section>
 
       <!-- Card 3: Suhu Air Nutrisi -->
-      <div class="mobile-dial-card" id="cardWaterTemp" data-category="water">
-        <div class="card-top-row">
-          <div class="param-header">
-            <span class="param-badge badge-water"><i class="fa-solid fa-water"></i> Suhu Air Nutrisi</span>
-            <span class="status-chip chip-optimal" id="badgeWaterTemp">Optimal</span>
+      <section class="dial-card" id="cardWaterTemp" data-category="water">
+        <div class="card-head">
+          <div class="param-title">
+            <span class="param-icon icon-water"><i class="fa-solid fa-water"></i></span>
+            <div>
+              <h3>Suhu Air Nutrisi</h3>
+              <span class="sub-label">Nutrient Water Temp</span>
+            </div>
           </div>
-          <div class="ideal-range"><i class="fa-solid fa-bullseye"></i> Ideal: 18° - 25°C</div>
+          <span class="status-pill pill-optimal" id="badgeWaterTemp">Optimal</span>
         </div>
 
-        <div class="dial-center-box">
-          <div class="svg-gauge-box">
-            <svg viewBox="0 0 200 120" class="gauge-svg">
-              <path class="gauge-track" d="M 25 105 A 75 75 0 0 1 175 105" />
-              <path class="gauge-progress stroke-cyan" id="fillWaterTemp" d="M 25 105 A 75 75 0 0 1 175 105" />
-              <g class="needle-pivot" id="needleWaterTemp" transform="rotate(-90, 100, 105)">
-                <polygon points="98,105 102,105 100.5,35 99.5,35" class="needle-body" />
-                <circle cx="100" cy="105" r="7" class="needle-cap" />
-                <circle cx="100" cy="105" r="3" class="needle-dot dot-cyan" />
-              </g>
-              <text x="25" y="118" class="scale-label">0°C</text>
-              <text x="175" y="118" class="scale-label" text-anchor="end">45°C</text>
-            </svg>
-          </div>
-
-          <div class="reading-number">
-            <span class="num-val" id="valWaterTemp">23.8</span>
-            <span class="num-unit">°C</span>
-          </div>
+        <div class="gauge-center">
+          <svg viewBox="0 0 200 115" class="dial-svg" id="svgWaterTemp">
+            <path class="arc-track" d="M 32 95 A 68 68 0 0 1 168 95" />
+            <path class="arc-value stroke-cyan" id="arcWaterTemp" d="M 32 95 A 68 68 0 0 1 168 95" />
+            
+            <line x1="100" y1="95" x2="100" y2="45" id="needleWaterTemp" class="needle-pointer stroke-white" />
+            <circle cx="100" cy="27" r="4.5" id="beadWaterTemp" class="needle-bead fill-cyan" />
+            <circle cx="100" cy="95" r="8" class="needle-pivot-outer" />
+            <circle cx="100" cy="95" r="3.5" class="needle-pivot-inner fill-cyan" />
+            
+            <text x="32" y="110" class="scale-text" text-anchor="start">0°C</text>
+            <text x="100" y="110" class="scale-text center" text-anchor="middle">22.5°C</text>
+            <text x="168" y="110" class="scale-text" text-anchor="end">45°C</text>
+          </svg>
         </div>
 
-        <div class="card-bottom-bar">
-          <span class="guide-text"><i class="fa-solid fa-circle-info"></i> Menjaga daya serap oksigen akar</span>
-          <span class="quick-status" id="hintWaterTemp">Normal</span>
+        <div class="card-readout">
+          <div class="big-val-group">
+            <span class="big-val" id="valWaterTemp">23.3</span>
+            <span class="val-unit">°C</span>
+          </div>
+          <div class="ideal-pill">
+            <i class="fa-solid fa-bullseye"></i> Ideal: 18°C – 25°C
+          </div>
         </div>
-      </div>
+      </section>
 
-    </section>
+    </main>
 
-    <!-- Mobile Mini Summary Grid -->
-    <div class="mini-summary-grid">
-      <div class="mini-stat">
-        <span class="stat-lbl">Rata-rata Suhu</span>
-        <strong class="stat-num" id="avgAirTemp">26.3 °C</strong>
+    <!-- Mini Summary Bar (3 Kolom Seimbang) -->
+    <div class="summary-row">
+      <div class="summary-box">
+        <span class="summary-label">Rata-rata Suhu</span>
+        <strong class="summary-number" id="avgAirTemp">25.9 °C</strong>
       </div>
-      <div class="mini-stat">
-        <span class="stat-lbl">Rata-rata Hum</span>
-        <strong class="stat-num" id="avgHumidity">68.0 %</strong>
+      <div class="summary-box">
+        <span class="summary-label">Rata-rata Hum</span>
+        <strong class="summary-number" id="avgHumidity">68.4 %</strong>
       </div>
-      <div class="mini-stat">
-        <span class="stat-lbl">Rata-rata Air</span>
-        <strong class="stat-num" id="avgWaterTemp">23.6 °C</strong>
+      <div class="summary-box">
+        <span class="summary-label">Rata-rata Air</span>
+        <strong class="summary-number" id="avgWaterTemp">23.6 °C</strong>
       </div>
     </div>
 
-    <!-- Mobile Interactive Line Chart Card -->
-    <section class="mobile-chart-card">
-      <div class="chart-top">
+    <!-- Mobile Real-Time Trend Line Chart -->
+    <section class="chart-section">
+      <div class="chart-header">
         <div>
-          <h2><i class="fa-solid fa-chart-line"></i> Grafik Riwayat Sensor</h2>
-          <span class="chart-sub">Pergerakan real-time 20 data terakhir</span>
+          <h3><i class="fa-solid fa-chart-line"></i> Grafik Riwayat Sensor</h3>
+          <span class="chart-subtitle">Pemantauan 20 data telemetri terkini</span>
         </div>
-        <div class="chart-quick-btns">
-          <button class="pill-btn" id="btnExportCSV" title="Unduh CSV">
-            <i class="fa-solid fa-download"></i> CSV
+        <div class="chart-actions">
+          <button class="btn-pill" id="btnExportCSV" title="Unduh CSV">
+            <i class="fa-solid fa-file-arrow-down"></i> CSV
           </button>
-          <button class="pill-btn" id="btnResetChart" title="Bersihkan">
+          <button class="btn-pill" id="btnResetChart" title="Reset">
             <i class="fa-solid fa-rotate-right"></i>
           </button>
         </div>
       </div>
 
-      <!-- Parameter Legend Toggles -->
-      <div class="mobile-legends">
-        <button class="legend-chip active" id="toggleAirTemp">
-          <span class="color-dot dot-sky"></span> Suhu Udara
+      <!-- Parameter Filter Legend Chips -->
+      <div class="chart-legends">
+        <button class="legend-btn active" id="toggleAirTemp">
+          <span class="color-badge bg-sky"></span> Suhu Udara
         </button>
-        <button class="legend-chip active" id="toggleHumidity">
-          <span class="color-dot dot-indigo"></span> Kelembapan
+        <button class="legend-btn active" id="toggleHumidity">
+          <span class="color-badge bg-indigo"></span> Kelembapan
         </button>
-        <button class="legend-chip active" id="toggleWaterTemp">
-          <span class="color-dot dot-cyan"></span> Suhu Air
+        <button class="legend-btn active" id="toggleWaterTemp">
+          <span class="color-badge bg-cyan"></span> Suhu Air
         </button>
       </div>
 
-      <div class="chart-wrapper">
+      <div class="chart-canvas-box">
         <canvas id="telemetryChart"></canvas>
       </div>
     </section>
 
-    <!-- Mobile Bottom Floating Action Bar -->
-    <div class="mobile-bottom-bar">
-      <button class="action-btn" id="btnSimToggle">
+    <!-- Floating Mobile Bottom Bar (Besar, Empuk & Mudah Dijangkau Jempol) -->
+    <div class="bottom-action-bar">
+      <button class="btn-action primary" id="btnSimToggle">
         <i class="fa-solid fa-pause" id="simIcon"></i>
         <span id="simBtnText">Jeda Simulasi</span>
       </button>
-      <button class="action-btn secondary" id="btnOpenManual">
+      <button class="btn-action secondary" id="btnOpenModal">
         <i class="fa-solid fa-sliders"></i>
         <span>Uji Nilai</span>
       </button>
     </div>
 
     <!-- Footer Mobile -->
-    <footer class="mobile-footer">
+    <footer class="app-footer">
       <p>🌱 Hydroponic Smart Monitoring System &bull; Abdimas 2026</p>
-      <span>ESP32 &bull; DHT22 &bull; DS18B20 Telemetry Ready</span>
+      <span>Fauzan Javier &bull; ESP32 Telemetry Ready</span>
     </footer>
 
   </div>
 
-  <!-- Mobile Settings & Calibration Sheet Modal -->
-  <div class="sheet-overlay" id="settingsModal">
-    <div class="bottom-sheet">
-      <div class="sheet-handle"></div>
-      
-      <div class="sheet-header">
-        <h3><i class="fa-solid fa-sliders"></i> Pengaturan &amp; Uji Coba</h3>
-        <button class="sheet-close" id="btnCloseModal">&times;</button>
+  <!-- Mobile Bottom Sheet (Modal Setelan & Slider Uji Coba) -->
+  <div class="bottom-sheet-overlay" id="settingsSheet">
+    <div class="bottom-sheet-card">
+      <div class="sheet-drag-handle"></div>
+
+      <div class="sheet-top">
+        <h3><i class="fa-solid fa-sliders"></i> Setelan &amp; Uji Coba Nilai</h3>
+        <button class="btn-close-sheet" id="btnCloseSheet">&times;</button>
       </div>
 
-      <div class="sheet-content">
-        <div class="setting-group">
-          <label class="setting-label">Mode Pembaruan</label>
-          <div class="toggle-switch-box">
-            <button class="switch-opt active" id="optAutoSim">Simulasi Otomatis</button>
-            <button class="switch-opt" id="optManual">Input Manual</button>
+      <div class="sheet-scrollable">
+        <div class="sheet-group">
+          <label class="group-label">Mode Pembaruan Sensor</label>
+          <div class="mode-switch">
+            <button class="mode-btn active" id="optAutoSim">Simulasi Otomatis</button>
+            <button class="mode-btn" id="optManual">Input Manual</button>
           </div>
         </div>
 
-        <div class="manual-slider-box" id="sliderBox">
-          <div class="slider-field">
-            <div class="slider-info">
+        <div class="slider-control-group">
+          <div class="slider-item">
+            <div class="slider-header">
               <span>Suhu Udara</span>
-              <strong id="sliderAirVal">26.5 °C</strong>
+              <strong id="labelSliderAir">25.8 °C</strong>
             </div>
-            <input type="range" id="sliderAir" min="15" max="42" step="0.5" value="26.5">
+            <input type="range" id="sliderAir" min="15" max="42" step="0.2" value="25.8">
           </div>
 
-          <div class="slider-field">
-            <div class="slider-info">
+          <div class="slider-item">
+            <div class="slider-header">
               <span>Kelembapan Udara</span>
-              <strong id="sliderHumVal">68.0 %</strong>
+              <strong id="labelSliderHum">70.0 %</strong>
             </div>
-            <input type="range" id="sliderHum" min="30" max="95" step="1" value="68">
+            <input type="range" id="sliderHum" min="30" max="95" step="1" value="70">
           </div>
 
-          <div class="slider-field">
-            <div class="slider-info">
+          <div class="slider-item">
+            <div class="slider-header">
               <span>Suhu Air Nutrisi</span>
-              <strong id="sliderWaterVal">24.0 °C</strong>
+              <strong id="labelSliderWater">23.5 °C</strong>
             </div>
-            <input type="range" id="sliderWater" min="15" max="35" step="0.5" value="24.0">
+            <input type="range" id="sliderWater" min="15" max="35" step="0.2" value="23.5">
           </div>
 
-          <button class="primary-btn-block" id="btnApplyManual">
-            <i class="fa-solid fa-check"></i> Terapkan Nilai Sensor
+          <button class="btn-apply-slider" id="btnApplyManual">
+            <i class="fa-solid fa-check"></i> Terapkan Nilai Sensor ke Dial
           </button>
         </div>
 
-        <div class="info-card">
-          <h4><i class="fa-solid fa-microchip"></i> Koneksi Hardware ESP32</h4>
-          <p>Kirimkan data sensor dari mikrokontroler menggunakan format HTTP JSON berikut:</p>
-          <code>{"suhu_udara": 26.5, "kelembapan": 68.0, "suhu_air": 24.0}</code>
+        <div class="code-info-card">
+          <h4><i class="fa-solid fa-microchip"></i> Format Payload ESP32 / Arduino</h4>
+          <p>Kirimkan HTTP POST JSON ke server lokal:</p>
+          <code>{"suhu_udara": 25.8, "kelembapan": 70.2, "suhu_air": 23.3}</code>
         </div>
       </div>
     </div>
