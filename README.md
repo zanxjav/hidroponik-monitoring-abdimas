@@ -1,35 +1,37 @@
-# 🌱 Smart Hydroponic Monitoring Dashboard - Abdimas
+# 🌱 Smart Hydroponic Monitoring Dashboard - Abdimas (Full Python)
 
-> **Web Dashboard Telemetri Hidroponik Real-Time**: Pemantauan Suhu Udara, Kelembapan, dan Suhu Air Nutrisi dengan indikator visual **Dial Gauge** dan **Grafik Riwayat Telemetri**.
+> **Web Dashboard Telemetri Hidroponik Real-Time Berbasis Full Python**: Pemantauan Suhu Udara, Kelembapan, dan Suhu Air Nutrisi dengan indikator visual **Dial Gauge (Plotly)** dan **Grafik Riwayat Sensor**.
 
-Aplikasi ini dikembangkan untuk kegiatan **Pengabdian Kepada Masyarakat (Abdimas)** guna membantu petani hidroponik dan masyarakat dalam memantau iklim mikro dan larutan nutrisi tanaman hidroponik secara mudah, presisi, dan modern.
+Aplikasi ini dikembangkan untuk kegiatan **Pengabdian Kepada Masyarakat (Abdimas)** guna membantu petani hidroponik dan masyarakat dalam memantau iklim mikro serta larutan nutrisi tanaman hidroponik secara mudah, presisi, dan modern.
 
 ---
 
-## ✨ Fitur Utama
+## ✨ Fitur Utama (Full Python)
 
-1. **3 Indikator Dial Gauge Interaktif**:
-   - 🌡️ **Suhu Udara (°C)**: Rentang 0 - 50°C (Rentang ideal: 22°C - 28°C).
-   - 💧 **Kelembapan Udara (%)**: Rentang 0 - 100% (Rentang ideal: 60% - 80%).
-   - 🌊 **Suhu Air Nutrisi (°C)**: Rentang 0 - 45°C (Rentang ideal: 18°C - 25°C).
-   - Indikator jarum halus (needle), busur nilai responsif (animated arc meter), dan badge status otomatis (*Optimal*, *Waspada*, *Perhatian*).
+1. **3 Indikator Dial Gauge Interaktif (Plotly Indicator)**:
+   - 🌡️ **Suhu Udara (°C)**: Rentang 0 – 50°C (Rentang ideal: 22°C – 28°C).
+   - 💧 **Kelembapan Udara (%)**: Rentang 0 – 100% (Rentang ideal: 60% – 80%).
+   - 🌊 **Suhu Air Nutrisi (°C)**: Rentang 0 – 45°C (Rentang ideal: 18°C – 25°C).
+   - Indikator meteran setengah lingkaran (*speedometer gauge*), threshold bar, status (*Optimal*, *Waspada*, *Perhatian*), dan label satuan yang jelas.
 
-2. **Grafik Riwayat Sensor Real-Time (Chart.js)**:
-   - Menampilkan tren suhu udara, kelembapan, dan suhu air secara berkelanjutan.
-   - Dilengkapi *filter chip* untuk menyembunyikan/menampilkan parameter tertentu.
-   - Skala ganda (*Dual Y-Axis*) agar suhu (°C) dan kelembapan (%) terbaca jelas tanpa tumpang-tindih.
+2. **Grafik Riwayat Telemetri Real-Time (Plotly Dual-Axis)**:
+   - Skala ganda (*Dual Y-Axis*) agar suhu (°C) dan kelembapan (%) tampil proporsional tanpa saling menumpuk.
+   - Kurva halus (*spline*) dengan titik penanda data (*markers*).
+   - *Hover tooltip* informatif per titik waktu.
 
 3. **Nuansa Visual Elegan**:
-   - Palet warna abu-abu modern (*slate/charcoal grey*) dipadukan dengan aksen biru langit (*sky blue glow*).
-   - Desain 1 tampilan (*Single Simple View*) yang ringkas, bersih, dan langsung menyajikan seluruh informasi tanpa perlu berpindah-pindah halaman.
+   - Palet warna abu-abu modern (*slate/charcoal grey*: `#0b0f17`, `#182232`) dipadukan dengan aksen biru langit (*sky blue*: `#38bdf8`, `#0284c7`).
+   - Desain 1 tampilan (*Single Clean View*) yang ringkas dan responsif.
 
-4. **Kontrol & Telemetri**:
-   - Tombol **Jeda / Lanjutkan Simulasi** untuk pengujian langsung tanpa perangkat fisik.
-   - **Setelan & Suntik Data Manual**: Menguji perubahan tampilan dial dan grafik sewaktu-waktu.
-   - **Unduh Log CSV**: Menyimpan rekaman data telemetri ke dalam format `.csv` untuk analisis laporan.
+4. **Kontrol Interaktif & Ekspor Data**:
+   - **Mode Simulasi Otomatis**: Data berfluktuasi secara halus dan realtime untuk pengujian/demo.
+   - **Mode Input Manual**: Penggeser (*slider*) untuk menyimulasikan nilai sensor ekstrem.
+   - **Unduh Log CSV**: Tombol untuk mengekspor rekaman data telemetri ke dalam format `.csv` dengan sekali klik.
 
-5. **Dukungan Mikrokontroler IoT**:
-   - Disertakan contoh firmware Arduino/ESP32 di folder `arduino_sample/` untuk integrasi sensor **DHT22** dan **DS18B20**.
+5. **Dua Pilihan Menjalankan Web**:
+   - 🐍 **Streamlit (`app.py`)**: 100% Full Python Web Dashboard.
+   - 🚀 **Flask (`server_flask.py`)**: Web server Python mandiri dengan REST API untuk mikrokontroler ESP32/Arduino.
+   - 🌐 **Static HTML (`index.html`)**: Versi instan yang aktif di GitHub Pages.
 
 ---
 
@@ -37,9 +39,9 @@ Aplikasi ini dikembangkan untuk kegiatan **Pengabdian Kepada Masyarakat (Abdimas
 
 | Elemen | Kode Warna | Keterangan |
 | :--- | :--- | :--- |
-| **Background Utama** | `#0b0f17` / `#111722` | Dark Slate Grey |
-| **Kartu Dashboard** | `#182232` | Charcoal Card dengan Glassmorphism |
-| **Aksen Biru Langit** | `#38bdf8` / `#0284c7` | Sky Blue Highlight & Glow |
+| **Background Utama** | `#0b0f17` | Dark Slate Grey |
+| **Kartu Dashboard** | `#182232` | Charcoal Card dengan Border Halus |
+| **Aksen Biru Langit** | `#38bdf8` / `#0284c7` | Sky Blue Accent & Glow |
 | **Suhu Udara** | `#38bdf8` | Sky Blue Primary |
 | **Kelembapan** | `#818cf8` | Indigo Sky Accent |
 | **Suhu Air Nutrisi** | `#06b6d4` | Cyan Ocean Accent |
@@ -50,13 +52,14 @@ Aplikasi ini dikembangkan untuk kegiatan **Pengabdian Kepada Masyarakat (Abdimas
 
 ```text
 hidroponic abdimas/
-├── index.html                   # Halaman antarmuka utama (single-page)
-├── css/
-│   └── style.css                # Desain nuansa abu-abu & biru langit
-├── js/
-│   └── app.js                   # Logika dial SVG, chart realtime, & simulasi
+├── app.py                       # Web Dashboard Full Python (Streamlit + Plotly)
+├── server_flask.py              # Server Web Python Flask + REST API IoT
+├── requirements.txt             # Dependensi Python
+├── index.html                   # Dashboard web alternatif (HTML/CSS/JS)
+├── css/style.css                # Style dashboard web
+├── js/app.js                    # Script dashboard web
 ├── arduino_sample/
-│   └── esp32_hidroponik_telemetry.ino  # Contoh firmware ESP32 (DHT22 & DS18B20)
+│   └── esp32_hidroponik_telemetry.ino  # Firmware ESP32 (DHT22 & DS18B20)
 ├── .gitignore                   # Konfigurasi file git
 └── README.md                    # Dokumentasi proyek
 ```
@@ -65,34 +68,33 @@ hidroponic abdimas/
 
 ## 🚀 Cara Menjalankan
 
-### Cara 1: Langsung Buka di Browser
-Cukup klik ganda berkas `index.html` atau buka menggunakan peramban modern (Chrome, Edge, Firefox).
-
-### Cara 2: Menjalankan Local Web Server (Opsional)
-Jika menggunakan ekstensi VS Code **Live Server**:
-1. Buka folder ini di VS Code.
-2. Klik kanan pada `index.html` -> **Open with Live Server**.
-
-Atau via terminal Node.js / Python:
+### 1. Pasang Dependensi Python
+Buka terminal di folder proyek ini lalu jalankan:
 ```bash
-# Menggunakan Python
-python -m http.server 8080
-
-# Menggunakan npx
-npx serve .
+pip install -r requirements.txt
 ```
-Akses di browser pada: `http://localhost:8080`
+
+### 2. Jalankan Web Dashboard Full Python (Streamlit)
+```bash
+streamlit run app.py
+```
+Peramban akan terbuka otomatis di alamat: **`http://localhost:8501`**
+
+### 3. (Opsional) Jalankan via Python Flask
+Jika ingin menggunakan server Flask yang mendukung endpoint REST API untuk ESP32:
+```bash
+python server_flask.py
+```
+Akses di: **`http://localhost:5000`**
 
 ---
 
-## 🔌 Format Integrasi Data IoT (ESP32 / NodeMCU)
+## 🔌 Format Integrasi Data IoT (ESP32)
 
-Dashboard menyediakan fungsi global JavaScript untuk menerima data dari eksternal:
-```javascript
-window.updateHydroponicData(suhuUdara, kelembapan, suhuAir);
-```
-
-Format payload JSON standar:
+Untuk mengirimkan data dari ESP32 ke server Flask:
+- **Metode**: `POST`
+- **URL**: `http://<IP_KOMPUTER_ANDA>:5000/api/telemetry`
+- **Format JSON**:
 ```json
 {
   "suhu_udara": 26.4,

@@ -13,6 +13,12 @@ desktop.ini
 node_modules/
 npm-debug.log*
 
+# Python Cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
 # Build / Temp
 dist/
 build/
