@@ -3,346 +3,1434 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Smart Hydroponic Monitor - Mobile Dashboard</title>
-  <meta name="description" content="Dashboard monitoring suhu, kelembapan, dan suhu air hidroponik mobile-first dengan indikator dial simetris dan grafik riwayat sensor.">
-  <meta name="theme-color" content="#0b0f17">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Smart Hydroponic Monitoring System - Dashboard Abdimas</title>
+  <meta name="description" content="Dashboard monitoring suhu, kelembapan, dan suhu air hidroponik realtime super rapih, modern, dan responsif mobile.">
+  <meta name="theme-color" content="#0a0e17">
 
-  <!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono -->
+  <!-- Google Fonts: Inter, Plus Jakarta Sans, JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
 
-  <!-- FontAwesome Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-
-  <!-- Chart.js -->
+  <!-- Chart.js CDN with fallback -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
-  <link rel="stylesheet" href="css/style.css">
+  <!-- Complete Inlined Design System & Stylesheet (100% Reliable, No External CSS Dependency Fails) -->
+  <style>
+    :root {
+      /* Palette: Nuansa Abu-Abu Elegan & Biru Langit */
+      --bg-base: #0a0e17;
+      --bg-surface: #121824;
+      --bg-card: #172030;
+      --bg-card-hover: #1d293d;
+      --bg-card-subtle: #0f1520;
+      --border-card: #222e42;
+      --border-focus: #38bdf8;
+      --border-subtle: rgba(255, 255, 255, 0.07);
+
+      /* Biru Langit (Sky Blue Accents) */
+      --sky-light: #bae6fd;
+      --sky-main: #38bdf8;
+      --sky-deep: #0284c7;
+      --sky-glow: rgba(56, 189, 248, 0.35);
+      --sky-subtle: rgba(56, 189, 248, 0.12);
+
+      /* Status Colors */
+      --optimal: #38bdf8;
+      --optimal-bg: rgba(56, 189, 248, 0.15);
+      --warning: #fbbf24;
+      --warning-bg: rgba(251, 191, 36, 0.15);
+      --danger: #f87171;
+      --danger-bg: rgba(248, 113, 113, 0.15);
+
+      /* Parameter Specific Themes */
+      --color-air: #38bdf8;
+      --color-hum: #818cf8;
+      --color-water: #06b6d4;
+
+      /* Typography */
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dark: #64748b;
+
+      /* Radii */
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --radius-pill: 9999px;
+      --shadow-main: 0 10px 30px -10px rgba(0, 0, 0, 0.6);
+      --shadow-glow: 0 0 25px rgba(56, 189, 248, 0.2);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.5;
+      min-height: 100vh;
+      min-height: 100dvh;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* Ambient Background Glow */
+    .bg-glow {
+      position: fixed;
+      border-radius: 50%;
+      pointer-events: none;
+      filter: blur(120px);
+      opacity: 0.22;
+      z-index: 0;
+    }
+    .glow-1 {
+      width: 450px;
+      height: 450px;
+      top: -120px;
+      right: 10%;
+      background: radial-gradient(circle, #38bdf8 0%, transparent 70%);
+    }
+    .glow-2 {
+      width: 400px;
+      height: 400px;
+      bottom: -60px;
+      left: 5%;
+      background: radial-gradient(circle, #0284c7 0%, transparent 70%);
+    }
+
+    /* Main Container (Responsive Mobile to Desktop) */
+    .dashboard-container {
+      position: relative;
+      z-index: 1;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 18px 20px 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* Header Navigation */
+    .header-card {
+      background: rgba(23, 32, 48, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-lg);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: var(--shadow-main);
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon-box {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-md);
+      background: linear-gradient(135deg, #0284c7, #38bdf8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      color: #0a0e17;
+      box-shadow: 0 4px 16px var(--sky-glow);
+      flex-shrink: 0;
+    }
+
+    .brand-title h1 {
+      font-size: 1.25rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--text-main);
+      line-height: 1.2;
+    }
+
+    .brand-title h1 span {
+      color: var(--sky-main);
+    }
+
+    .brand-title p {
+      font-size: 0.76rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .live-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 12px;
+      border-radius: var(--radius-pill);
+      background: var(--bg-card-subtle);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      font-size: 0.74rem;
+      font-weight: 700;
+      color: var(--sky-light);
+    }
+
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--sky-main);
+      box-shadow: 0 0 8px var(--sky-main);
+      animation: pulse-live 1.8s infinite ease-in-out;
+    }
+
+    @keyframes pulse-live {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    .clock-display {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.76rem;
+      color: var(--text-muted);
+      background: var(--bg-card-subtle);
+      padding: 6px 12px;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--border-card);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 0.8rem;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.2s ease;
+    }
+
+    .btn-sky {
+      background: linear-gradient(135deg, #0284c7, #38bdf8);
+      color: #0a0e17;
+      box-shadow: 0 4px 14px rgba(56, 189, 248, 0.25);
+    }
+
+    .btn-sky:hover {
+      box-shadow: 0 6px 20px rgba(56, 189, 248, 0.4);
+      transform: translateY(-1px);
+    }
+
+    .btn-outline {
+      background: var(--bg-card-subtle);
+      border-color: var(--border-card);
+      color: var(--text-main);
+    }
+
+    .btn-outline:hover {
+      border-color: var(--sky-main);
+      color: var(--sky-light);
+      background: var(--bg-card-hover);
+    }
+
+    /* Eco Status Banner */
+    .eco-banner {
+      background: linear-gradient(135deg, rgba(23, 32, 48, 0.95), rgba(2, 132, 199, 0.18));
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      border-radius: var(--radius-md);
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      box-shadow: var(--shadow-main);
+      flex-wrap: wrap;
+    }
+
+    .eco-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--optimal-bg);
+      color: var(--sky-main);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .eco-content {
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .eco-content h2 {
+      font-size: 0.94rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .eco-content p {
+      font-size: 0.76rem;
+      color: var(--text-muted);
+      margin-top: 1px;
+    }
+
+    .eco-badges-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .eco-pill {
+      font-size: 0.72rem;
+      padding: 4px 10px;
+      border-radius: var(--radius-pill);
+      background: var(--bg-card-subtle);
+      border: 1px solid var(--border-card);
+      color: var(--text-main);
+      font-weight: 600;
+    }
+
+    .eco-pill strong {
+      color: var(--sky-main);
+    }
+
+    /* 3 Dial Gauge Cards Grid */
+    .gauges-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .gauge-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-lg);
+      padding: 18px 16px 16px;
+      box-shadow: var(--shadow-main);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .gauge-card:hover {
+      border-color: rgba(56, 189, 248, 0.4);
+      transform: translateY(-2px);
+    }
+
+    .gauge-card-header {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+
+    .param-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .param-badge-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+
+    .icon-air { background: rgba(56, 189, 248, 0.15); color: var(--color-air); border: 1px solid rgba(56, 189, 248, 0.3); }
+    .icon-hum { background: rgba(129, 140, 248, 0.15); color: var(--color-hum); border: 1px solid rgba(129, 140, 248, 0.3); }
+    .icon-water { background: rgba(6, 182, 212, 0.15); color: var(--color-water); border: 1px solid rgba(6, 182, 212, 0.3); }
+
+    .param-info h3 {
+      font-size: 0.94rem;
+      font-weight: 700;
+      color: var(--text-main);
+      line-height: 1.2;
+    }
+
+    .param-info span {
+      font-size: 0.68rem;
+      color: var(--text-dark);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      display: block;
+    }
+
+    .status-badge {
+      font-size: 0.68rem;
+      font-weight: 800;
+      padding: 3px 9px;
+      border-radius: var(--radius-pill);
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+
+    .status-optimal {
+      background: var(--optimal-bg);
+      color: var(--sky-main);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+    }
+    .status-warning {
+      background: var(--warning-bg);
+      color: var(--warning);
+      border: 1px solid rgba(251, 191, 36, 0.4);
+    }
+    .status-danger {
+      background: var(--danger-bg);
+      color: var(--danger);
+      border: 1px solid rgba(248, 113, 113, 0.4);
+    }
+
+    /* Canvas Gauge Display (100% Reliable, Smooth & Never Disappears) */
+    .canvas-container {
+      width: 100%;
+      max-width: 250px;
+      height: 145px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 4px 0 2px;
+      position: relative;
+    }
+
+    .canvas-gauge {
+      width: 240px;
+      height: 140px;
+      display: block;
+    }
+
+    /* Big Value Readout */
+    .readout-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      margin-top: 2px;
+    }
+
+    .val-and-unit {
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+    }
+
+    .display-number {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 2.35rem;
+      font-weight: 800;
+      color: var(--text-main);
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+
+    .display-unit {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--sky-main);
+    }
+
+    .ideal-tag {
+      margin-top: 6px;
+      padding: 3px 10px;
+      border-radius: var(--radius-pill);
+      background: var(--bg-card-subtle);
+      border: 1px solid var(--border-card);
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* Summary Bar */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    .summary-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .summary-card-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-sm);
+      background: rgba(56, 189, 248, 0.12);
+      color: var(--sky-main);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .summary-card-text {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .summary-card-label {
+      font-size: 0.7rem;
+      color: var(--text-dark);
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .summary-card-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    /* Real-Time Line Chart Section */
+    .chart-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-lg);
+      padding: 16px 20px;
+      box-shadow: var(--shadow-main);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .chart-panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .chart-title-group h3 {
+      font-size: 0.96rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .chart-title-group p {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    .chart-filter-chips {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .chip-btn {
+      padding: 5px 10px;
+      border-radius: var(--radius-pill);
+      background: var(--bg-card-subtle);
+      border: 1px solid var(--border-card);
+      color: var(--text-muted);
+      font-size: 0.72rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .chip-btn.active {
+      color: var(--text-main);
+      border-color: rgba(255, 255, 255, 0.2);
+      background: var(--bg-card-hover);
+    }
+
+    .chip-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+    }
+
+    .dot-air { background: var(--color-air); box-shadow: 0 0 6px var(--color-air); }
+    .dot-hum { background: var(--color-hum); box-shadow: 0 0 6px var(--color-hum); }
+    .dot-water { background: var(--color-water); box-shadow: 0 0 6px var(--color-water); }
+
+    .chart-viewport {
+      position: relative;
+      width: 100%;
+      height: 250px;
+    }
+
+    /* Modal / Bottom Sheet Settings */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(10, 14, 23, 0.85);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .modal-backdrop.active {
+      display: flex;
+    }
+
+    .modal-dialog {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 480px;
+      padding: 18px 20px 22px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8);
+      animation: pop 0.25s ease-out;
+    }
+
+    @keyframes pop {
+      from { transform: scale(0.96); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .modal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-card);
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+    }
+
+    .modal-head h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .modal-close-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    .modal-body {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .slider-row {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .slider-lbl-box {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.78rem;
+    }
+
+    .slider-lbl-box strong {
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--sky-main);
+    }
+
+    .slider-row input[type="range"] {
+      width: 100%;
+      height: 6px;
+      background: var(--border-card);
+      border-radius: 3px;
+      outline: none;
+      accent-color: var(--sky-main);
+    }
+
+    .btn-block-apply {
+      width: 100%;
+      padding: 10px;
+      border-radius: var(--radius-sm);
+      background: linear-gradient(135deg, #0284c7, #38bdf8);
+      border: none;
+      color: #0a0e17;
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+      margin-top: 4px;
+    }
+
+    /* Footer */
+    .app-footer {
+      text-align: center;
+      padding: 12px 0 6px;
+      font-size: 0.74rem;
+      color: var(--text-dark);
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    /* Responsive Mobile Breakpoint */
+    @media (max-width: 900px) {
+      .gauges-grid {
+        grid-template-columns: 1fr;
+      }
+      .summary-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .dashboard-container {
+        padding: 12px 14px 30px;
+      }
+      .header-card {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .header-controls {
+        width: 100%;
+        justify-content: space-between;
+      }
+    }
+  </style>
 </head>
 <body>
 
-  <!-- Background Ambient Glow -->
-  <div class="ambient-glow glow-top"></div>
-  <div class="ambient-glow glow-bottom"></div>
+  <!-- Ambient Glow -->
+  <div class="bg-glow glow-1"></div>
+  <div class="bg-glow glow-2"></div>
 
-  <!-- Dedicated Mobile Container (Max 440px on desktop, 100% on phones) -->
-  <div class="mobile-container">
+  <div class="dashboard-container">
     
-    <!-- Top Mobile App Header -->
-    <header class="app-header">
-      <div class="brand">
-        <div class="brand-logo">
-          <i class="fa-solid fa-seedling"></i>
-        </div>
-        <div class="brand-text">
+    <!-- Top Header -->
+    <header class="header-card">
+      <div class="brand-group">
+        <div class="brand-icon-box">🌱</div>
+        <div class="brand-title">
           <h1>Hidroponik <span>Monitor</span></h1>
-          <p>Sistem Telemetri Abdimas</p>
+          <p>Sistem Telemetri Abdimas &bull; Suhu, Kelembapan &amp; Suhu Air</p>
         </div>
       </div>
 
-      <div class="header-right">
-        <div class="live-badge" id="liveBadge">
-          <span class="pulsing-dot"></span>
-          <span id="liveBadgeText">LIVE</span>
+      <div class="header-controls">
+        <div class="live-indicator">
+          <span class="live-dot"></span>
+          <span id="liveText">LIVE</span>
         </div>
-        <button class="btn-icon" id="btnSettings" aria-label="Buka Setelan">
-          <i class="fa-solid fa-sliders"></i>
+        <div class="clock-display" id="clockDisplay">--:--:-- WIB</div>
+        <button class="btn btn-outline" id="btnSimToggle">
+          <span id="simBtnIcon">⏸️</span>
+          <span id="simBtnText">Jeda</span>
+        </button>
+        <button class="btn btn-sky" id="btnOpenModal">
+          ⚙️ Setelan
         </button>
       </div>
     </header>
 
-    <!-- Eco-Status Banner (User Friendly & Bahasa Indonesia Jelas) -->
-    <div class="eco-card" id="ecoCard">
-      <div class="eco-icon-wrap" id="ecoIcon">
-        <i class="fa-solid fa-circle-check"></i>
-      </div>
-      <div class="eco-details">
+    <!-- Eco Status Banner -->
+    <section class="eco-banner">
+      <div class="eco-icon" id="ecoIcon">✅</div>
+      <div class="eco-content">
         <h2 id="ecoTitle">Kondisi Hidroponik Optimal</h2>
-        <p id="ecoDesc">Semua parameter (suhu &amp; kelembapan) berada pada rentang ideal pertumbuhan tanaman.</p>
+        <p id="ecoDesc">Semua parameter lingkungan dan nutrisi air berada pada batas ideal tanaman.</p>
       </div>
-      <span class="clock-pill" id="liveClock">--:--:-- WIB</span>
-    </div>
-
-    <!-- Segmented Filter Tabs (Mudah disentuh jempol) -->
-    <div class="nav-tabs" role="tablist">
-      <button class="tab-item active" data-filter="all">
-        <i class="fa-solid fa-border-all"></i> Semua
-      </button>
-      <button class="tab-item" data-filter="temp">
-        <i class="fa-solid fa-temperature-half"></i> Suhu
-      </button>
-      <button class="tab-item" data-filter="hum">
-        <i class="fa-solid fa-droplet"></i> Kelembapan
-      </button>
-      <button class="tab-item" data-filter="water">
-        <i class="fa-solid fa-water"></i> Suhu Air
-      </button>
-    </div>
-
-    <!-- Symmetrical Mobile Dial Cards -->
-    <main class="dials-stack">
-      
-      <!-- Card 1: Suhu Udara -->
-      <section class="dial-card" id="cardAirTemp" data-category="temp">
-        <div class="card-head">
-          <div class="param-title">
-            <span class="param-icon icon-air"><i class="fa-solid fa-temperature-half"></i></span>
-            <div>
-              <h3>Suhu Udara</h3>
-              <span class="sub-label">Ambient Temperature</span>
-            </div>
-          </div>
-          <span class="status-pill pill-optimal" id="badgeAirTemp">Optimal</span>
-        </div>
-
-        <!-- Perfectly Symmetrical SVG Dial Gauge -->
-        <div class="gauge-center">
-          <svg viewBox="0 0 200 115" class="dial-svg" id="svgAirTemp">
-            <!-- Background Track Arc -->
-            <path class="arc-track" d="M 32 95 A 68 68 0 0 1 168 95" />
-            <!-- Active Color Arc -->
-            <path class="arc-value stroke-sky" id="arcAirTemp" d="M 32 95 A 68 68 0 0 1 168 95" />
-            
-            <!-- Mathematical Symmetrical Needle -->
-            <line x1="100" y1="95" x2="100" y2="45" id="needleAirTemp" class="needle-pointer stroke-white" />
-            <!-- Glowing Tip Bead on Arc -->
-            <circle cx="100" cy="27" r="4.5" id="beadAirTemp" class="needle-bead fill-sky" />
-            <!-- Center Pivot Cap -->
-            <circle cx="100" cy="95" r="8" class="needle-pivot-outer" />
-            <circle cx="100" cy="95" r="3.5" class="needle-pivot-inner fill-sky" />
-            
-            <!-- Scale Marks (Rapi & Siku) -->
-            <text x="32" y="110" class="scale-text" text-anchor="start">0°C</text>
-            <text x="100" y="110" class="scale-text center" text-anchor="middle">25°C</text>
-            <text x="168" y="110" class="scale-text" text-anchor="end">50°C</text>
-          </svg>
-        </div>
-
-        <div class="card-readout">
-          <div class="big-val-group">
-            <span class="big-val" id="valAirTemp">25.8</span>
-            <span class="val-unit">°C</span>
-          </div>
-          <div class="ideal-pill">
-            <i class="fa-solid fa-bullseye"></i> Ideal: 22°C – 28°C
-          </div>
-        </div>
-      </section>
-
-      <!-- Card 2: Kelembapan Udara -->
-      <section class="dial-card" id="cardHumidity" data-category="hum">
-        <div class="card-head">
-          <div class="param-title">
-            <span class="param-icon icon-hum"><i class="fa-solid fa-droplet"></i></span>
-            <div>
-              <h3>Kelembapan Udara</h3>
-              <span class="sub-label">Relative Humidity</span>
-            </div>
-          </div>
-          <span class="status-pill pill-optimal" id="badgeHumidity">Optimal</span>
-        </div>
-
-        <div class="gauge-center">
-          <svg viewBox="0 0 200 115" class="dial-svg" id="svgHumidity">
-            <path class="arc-track" d="M 32 95 A 68 68 0 0 1 168 95" />
-            <path class="arc-value stroke-indigo" id="arcHumidity" d="M 32 95 A 68 68 0 0 1 168 95" />
-            
-            <line x1="100" y1="95" x2="100" y2="45" id="needleHumidity" class="needle-pointer stroke-white" />
-            <circle cx="100" cy="27" r="4.5" id="beadHumidity" class="needle-bead fill-indigo" />
-            <circle cx="100" cy="95" r="8" class="needle-pivot-outer" />
-            <circle cx="100" cy="95" r="3.5" class="needle-pivot-inner fill-indigo" />
-            
-            <text x="32" y="110" class="scale-text" text-anchor="start">0%</text>
-            <text x="100" y="110" class="scale-text center" text-anchor="middle">50%</text>
-            <text x="168" y="110" class="scale-text" text-anchor="end">100%</text>
-          </svg>
-        </div>
-
-        <div class="card-readout">
-          <div class="big-val-group">
-            <span class="big-val" id="valHumidity">70.2</span>
-            <span class="val-unit">%</span>
-          </div>
-          <div class="ideal-pill">
-            <i class="fa-solid fa-bullseye"></i> Ideal: 60% – 80%
-          </div>
-        </div>
-      </section>
-
-      <!-- Card 3: Suhu Air Nutrisi -->
-      <section class="dial-card" id="cardWaterTemp" data-category="water">
-        <div class="card-head">
-          <div class="param-title">
-            <span class="param-icon icon-water"><i class="fa-solid fa-water"></i></span>
-            <div>
-              <h3>Suhu Air Nutrisi</h3>
-              <span class="sub-label">Nutrient Water Temp</span>
-            </div>
-          </div>
-          <span class="status-pill pill-optimal" id="badgeWaterTemp">Optimal</span>
-        </div>
-
-        <div class="gauge-center">
-          <svg viewBox="0 0 200 115" class="dial-svg" id="svgWaterTemp">
-            <path class="arc-track" d="M 32 95 A 68 68 0 0 1 168 95" />
-            <path class="arc-value stroke-cyan" id="arcWaterTemp" d="M 32 95 A 68 68 0 0 1 168 95" />
-            
-            <line x1="100" y1="95" x2="100" y2="45" id="needleWaterTemp" class="needle-pointer stroke-white" />
-            <circle cx="100" cy="27" r="4.5" id="beadWaterTemp" class="needle-bead fill-cyan" />
-            <circle cx="100" cy="95" r="8" class="needle-pivot-outer" />
-            <circle cx="100" cy="95" r="3.5" class="needle-pivot-inner fill-cyan" />
-            
-            <text x="32" y="110" class="scale-text" text-anchor="start">0°C</text>
-            <text x="100" y="110" class="scale-text center" text-anchor="middle">22.5°C</text>
-            <text x="168" y="110" class="scale-text" text-anchor="end">45°C</text>
-          </svg>
-        </div>
-
-        <div class="card-readout">
-          <div class="big-val-group">
-            <span class="big-val" id="valWaterTemp">23.3</span>
-            <span class="val-unit">°C</span>
-          </div>
-          <div class="ideal-pill">
-            <i class="fa-solid fa-bullseye"></i> Ideal: 18°C – 25°C
-          </div>
-        </div>
-      </section>
-
-    </main>
-
-    <!-- Mini Summary Bar (3 Kolom Seimbang) -->
-    <div class="summary-row">
-      <div class="summary-box">
-        <span class="summary-label">Rata-rata Suhu</span>
-        <strong class="summary-number" id="avgAirTemp">25.9 °C</strong>
-      </div>
-      <div class="summary-box">
-        <span class="summary-label">Rata-rata Hum</span>
-        <strong class="summary-number" id="avgHumidity">68.4 %</strong>
-      </div>
-      <div class="summary-box">
-        <span class="summary-label">Rata-rata Air</span>
-        <strong class="summary-number" id="avgWaterTemp">23.6 °C</strong>
-      </div>
-    </div>
-
-    <!-- Mobile Real-Time Trend Line Chart -->
-    <section class="chart-section">
-      <div class="chart-header">
-        <div>
-          <h3><i class="fa-solid fa-chart-line"></i> Grafik Riwayat Sensor</h3>
-          <span class="chart-subtitle">Pemantauan 20 data telemetri terkini</span>
-        </div>
-        <div class="chart-actions">
-          <button class="btn-pill" id="btnExportCSV" title="Unduh CSV">
-            <i class="fa-solid fa-file-arrow-down"></i> CSV
-          </button>
-          <button class="btn-pill" id="btnResetChart" title="Reset">
-            <i class="fa-solid fa-rotate-right"></i>
-          </button>
-        </div>
-      </div>
-
-      <!-- Parameter Filter Legend Chips -->
-      <div class="chart-legends">
-        <button class="legend-btn active" id="toggleAirTemp">
-          <span class="color-badge bg-sky"></span> Suhu Udara
-        </button>
-        <button class="legend-btn active" id="toggleHumidity">
-          <span class="color-badge bg-indigo"></span> Kelembapan
-        </button>
-        <button class="legend-btn active" id="toggleWaterTemp">
-          <span class="color-badge bg-cyan"></span> Suhu Air
-        </button>
-      </div>
-
-      <div class="chart-canvas-box">
-        <canvas id="telemetryChart"></canvas>
+      <div class="eco-badges-group">
+        <span class="eco-pill">Suhu: <strong id="pillAir">25.8°C</strong></span>
+        <span class="eco-pill">Hum: <strong id="pillHum">70.2%</strong></span>
+        <span class="eco-pill">Air: <strong id="pillWater">23.3°C</strong></span>
       </div>
     </section>
 
-    <!-- Floating Mobile Bottom Bar (Besar, Empuk & Mudah Dijangkau Jempol) -->
-    <div class="bottom-action-bar">
-      <button class="btn-action primary" id="btnSimToggle">
-        <i class="fa-solid fa-pause" id="simIcon"></i>
-        <span id="simBtnText">Jeda Simulasi</span>
-      </button>
-      <button class="btn-action secondary" id="btnOpenModal">
-        <i class="fa-solid fa-sliders"></i>
-        <span>Uji Nilai</span>
-      </button>
-    </div>
+    <!-- 3 Dial Gauge Cards (Canvas Powered & 100% Symmetrical) -->
+    <main class="gauges-grid">
+      
+      <!-- Card 1: Suhu Udara -->
+      <article class="gauge-card">
+        <div class="gauge-card-header">
+          <div class="param-info">
+            <div class="param-badge-icon icon-air">🌡️</div>
+            <div>
+              <h3>Suhu Udara</h3>
+              <span>Ambient Temp</span>
+            </div>
+          </div>
+          <span class="status-badge status-optimal" id="badgeAir">Optimal</span>
+        </div>
 
-    <!-- Footer Mobile -->
+        <div class="canvas-container">
+          <canvas id="gaugeAir" class="canvas-gauge" width="480" height="280"></canvas>
+        </div>
+
+        <div class="readout-box">
+          <div class="val-and-unit">
+            <span class="display-number" id="valAir">25.8</span>
+            <span class="display-unit">°C</span>
+          </div>
+          <div class="ideal-tag">🎯 Rentang Ideal: 22°C – 28°C</div>
+        </div>
+      </article>
+
+      <!-- Card 2: Kelembapan Udara -->
+      <article class="gauge-card">
+        <div class="gauge-card-header">
+          <div class="param-info">
+            <div class="param-badge-icon icon-hum">💧</div>
+            <div>
+              <h3>Kelembapan Udara</h3>
+              <span>Relative Humidity</span>
+            </div>
+          </div>
+          <span class="status-badge status-optimal" id="badgeHum">Optimal</span>
+        </div>
+
+        <div class="canvas-container">
+          <canvas id="gaugeHum" class="canvas-gauge" width="480" height="280"></canvas>
+        </div>
+
+        <div class="readout-box">
+          <div class="val-and-unit">
+            <span class="display-number" id="valHum">70.2</span>
+            <span class="display-unit">%</span>
+          </div>
+          <div class="ideal-tag">🎯 Rentang Ideal: 60% – 80%</div>
+        </div>
+      </article>
+
+      <!-- Card 3: Suhu Air Nutrisi -->
+      <article class="gauge-card">
+        <div class="gauge-card-header">
+          <div class="param-info">
+            <div class="param-badge-icon icon-water">🌊</div>
+            <div>
+              <h3>Suhu Air Nutrisi</h3>
+              <span>Nutrient Water</span>
+            </div>
+          </div>
+          <span class="status-badge status-optimal" id="badgeWater">Optimal</span>
+        </div>
+
+        <div class="canvas-container">
+          <canvas id="gaugeWater" class="canvas-gauge" width="480" height="280"></canvas>
+        </div>
+
+        <div class="readout-box">
+          <div class="val-and-unit">
+            <span class="display-number" id="valWater">23.3</span>
+            <span class="display-unit">°C</span>
+          </div>
+          <div class="ideal-tag">🎯 Rentang Ideal: 18°C – 25°C</div>
+        </div>
+      </article>
+
+    </main>
+
+    <!-- Summary Metrics Row -->
+    <section class="summary-grid">
+      <div class="summary-card">
+        <div class="summary-card-icon">📈</div>
+        <div class="summary-card-text">
+          <span class="summary-card-label">Rata-rata Suhu</span>
+          <span class="summary-card-val" id="avgAir">25.9 °C</span>
+        </div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-card-icon">🌧️</div>
+        <div class="summary-card-text">
+          <span class="summary-card-label">Rata-rata Kelembapan</span>
+          <span class="summary-card-val" id="avgHum">68.4 %</span>
+        </div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-card-icon">🧪</div>
+        <div class="summary-card-text">
+          <span class="summary-card-label">Rata-rata Suhu Air</span>
+          <span class="summary-card-val" id="avgWater">23.6 °C</span>
+        </div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-card-icon">🛡️</div>
+        <div class="summary-card-text">
+          <span class="summary-card-label">Status Ekosistem</span>
+          <span class="summary-card-val" id="ecoStatusText" style="color: #38bdf8;">Optimal Prima</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Real-Time Telemetry Line Chart -->
+    <section class="chart-panel">
+      <div class="chart-panel-header">
+        <div class="chart-title-group">
+          <h3>📊 Grafik Riwayat Telemetri Sensor</h3>
+          <p>Pemantauan tren suhu, kelembapan, dan suhu air secara berkelanjutan</p>
+        </div>
+        <div class="chart-filter-chips">
+          <button class="chip-btn active" id="chipAir"><span class="chip-dot dot-air"></span> Suhu Udara</button>
+          <button class="chip-btn active" id="chipHum"><span class="chip-dot dot-hum"></span> Kelembapan</button>
+          <button class="chip-btn active" id="chipWater"><span class="chip-dot dot-water"></span> Suhu Air</button>
+          <button class="btn btn-outline" style="padding: 4px 10px; font-size: 0.72rem;" id="btnExportCSV">📥 Unduh CSV</button>
+        </div>
+      </div>
+
+      <div class="chart-viewport">
+        <canvas id="chartCanvas"></canvas>
+      </div>
+    </section>
+
+    <!-- Footer -->
     <footer class="app-footer">
-      <p>🌱 Hydroponic Smart Monitoring System &bull; Abdimas 2026</p>
-      <span>Fauzan Javier &bull; ESP32 Telemetry Ready</span>
+      <p>🌱 Smart Hydroponic Monitoring Dashboard &bull; Proyek Abdimas 2026 &bull; Fauzan Javier (@zanxjav)</p>
     </footer>
 
   </div>
 
-  <!-- Mobile Bottom Sheet (Modal Setelan & Slider Uji Coba) -->
-  <div class="bottom-sheet-overlay" id="settingsSheet">
-    <div class="bottom-sheet-card">
-      <div class="sheet-drag-handle"></div>
-
-      <div class="sheet-top">
-        <h3><i class="fa-solid fa-sliders"></i> Setelan &amp; Uji Coba Nilai</h3>
-        <button class="btn-close-sheet" id="btnCloseSheet">&times;</button>
+  <!-- Modal Setelan & Suntik Data Manual -->
+  <div class="modal-backdrop" id="settingsModal">
+    <div class="modal-dialog">
+      <div class="modal-head">
+        <h3>⚙️ Pengaturan &amp; Uji Coba Sensor</h3>
+        <button class="modal-close-btn" id="btnCloseModal">&times;</button>
       </div>
-
-      <div class="sheet-scrollable">
-        <div class="sheet-group">
-          <label class="group-label">Mode Pembaruan Sensor</label>
-          <div class="mode-switch">
-            <button class="mode-btn active" id="optAutoSim">Simulasi Otomatis</button>
-            <button class="mode-btn" id="optManual">Input Manual</button>
+      <div class="modal-body">
+        <p style="font-size: 0.78rem; color: #94a3b8;">Geser nilai di bawah untuk menguji perubahan jarum dial dan grafik secara langsung:</p>
+        
+        <div class="slider-row">
+          <div class="slider-lbl-box">
+            <span>Suhu Udara</span>
+            <strong id="lblSliderAir">25.8 °C</strong>
           </div>
+          <input type="range" id="sliderAir" min="15" max="45" step="0.2" value="25.8">
         </div>
 
-        <div class="slider-control-group">
-          <div class="slider-item">
-            <div class="slider-header">
-              <span>Suhu Udara</span>
-              <strong id="labelSliderAir">25.8 °C</strong>
-            </div>
-            <input type="range" id="sliderAir" min="15" max="42" step="0.2" value="25.8">
+        <div class="slider-row">
+          <div class="slider-lbl-box">
+            <span>Kelembapan Udara</span>
+            <strong id="lblSliderHum">70.2 %</strong>
           </div>
-
-          <div class="slider-item">
-            <div class="slider-header">
-              <span>Kelembapan Udara</span>
-              <strong id="labelSliderHum">70.0 %</strong>
-            </div>
-            <input type="range" id="sliderHum" min="30" max="95" step="1" value="70">
-          </div>
-
-          <div class="slider-item">
-            <div class="slider-header">
-              <span>Suhu Air Nutrisi</span>
-              <strong id="labelSliderWater">23.5 °C</strong>
-            </div>
-            <input type="range" id="sliderWater" min="15" max="35" step="0.2" value="23.5">
-          </div>
-
-          <button class="btn-apply-slider" id="btnApplyManual">
-            <i class="fa-solid fa-check"></i> Terapkan Nilai Sensor ke Dial
-          </button>
+          <input type="range" id="sliderHum" min="30" max="95" step="1" value="70">
         </div>
 
-        <div class="code-info-card">
-          <h4><i class="fa-solid fa-microchip"></i> Format Payload ESP32 / Arduino</h4>
-          <p>Kirimkan HTTP POST JSON ke server lokal:</p>
-          <code>{"suhu_udara": 25.8, "kelembapan": 70.2, "suhu_air": 23.3}</code>
+        <div class="slider-row">
+          <div class="slider-lbl-box">
+            <span>Suhu Air Nutrisi</span>
+            <strong id="lblSliderWater">23.3 °C</strong>
+          </div>
+          <input type="range" id="sliderWater" min="15" max="35" step="0.2" value="23.3">
         </div>
+
+        <button class="btn-block-apply" id="btnApplySlider">Terapkan ke Dashboard</button>
       </div>
     </div>
   </div>
 
-  <script src="js/app.js"></script>
+  <!-- Bulletproof Interactive JavaScript Engine -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Sensor Limits
+      const RANGES = {
+        air: { min: 0, max: 50, idealMin: 22, idealMax: 28, unit: '°C' },
+        hum: { min: 0, max: 100, idealMin: 60, idealMax: 80, unit: '%' },
+        water: { min: 0, max: 45, idealMin: 18, idealMax: 25, unit: '°C' },
+      };
+
+      // State
+      const state = {
+        air: 25.8,
+        hum: 70.2,
+        water: 23.3,
+        isSimulating: true,
+        history: [],
+        maxPoints: 20
+      };
+
+      // --- Live Clock ---
+      const clockEl = document.getElementById('clockDisplay');
+      function updateClock() {
+        const now = new Date();
+        const h = String(now.getHours()).padStart(2, '0');
+        const m = String(now.getMinutes()).padStart(2, '0');
+        const s = String(now.getSeconds()).padStart(2, '0');
+        if (clockEl) clockEl.textContent = `${h}:${m}:${s} WIB`;
+      }
+      setInterval(updateClock, 1000);
+      updateClock();
+
+      // --- HIGH PERFORMANCE SYMMETRICAL CANVAS DIAL RENDERER ---
+      /**
+       * Draws a modern, symmetrical dial speedometer on HTML5 Canvas
+       */
+      function drawDial(canvasId, value, cfg, accentColor) {
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const w = canvas.width;
+        const h = canvas.height;
+
+        ctx.clearRect(0, 0, w, h);
+
+        const cx = w / 2;
+        const cy = h - 35;
+        const radius = 100;
+        const startAngle = Math.PI;       // 180 deg (horizontal left)
+        const endAngle = 2 * Math.PI;     // 360 deg (horizontal right)
+        const totalAngle = Math.PI;
+
+        // 1. Draw Background Track Arc
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, startAngle, endAngle, false);
+        ctx.strokeStyle = '#222e42';
+        ctx.lineWidth = 18;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+
+        // 2. Draw Active Value Progress Arc
+        const fraction = Math.min(Math.max((value - cfg.min) / (cfg.max - cfg.min), 0), 1);
+        const currentAngle = startAngle + (fraction * totalAngle);
+
+        if (fraction > 0.01) {
+          ctx.beginPath();
+          ctx.arc(cx, cy, radius, startAngle, currentAngle, false);
+          ctx.strokeStyle = accentColor;
+          ctx.lineWidth = 18;
+          ctx.lineCap = 'round';
+          ctx.shadowColor = accentColor;
+          ctx.shadowBlur = 12;
+          ctx.stroke();
+          ctx.shadowBlur = 0; // reset shadow
+        }
+
+        // 3. Draw Clean Tick Marks
+        for (let i = 0; i <= 10; i++) {
+          const tFrac = i / 10;
+          const tAngle = startAngle + (tFrac * totalAngle);
+          const innerR = radius - (i % 5 === 0 ? 20 : 14);
+          const outerR = radius - 10;
+
+          const x1 = cx + innerR * Math.cos(tAngle);
+          const y1 = cy + innerR * Math.sin(tAngle);
+          const x2 = cx + outerR * Math.cos(tAngle);
+          const y2 = cy + outerR * Math.sin(tAngle);
+
+          ctx.beginPath();
+          ctx.moveTo(x1, y1);
+          ctx.lineTo(x2, y2);
+          ctx.strokeStyle = (i % 5 === 0) ? '#64748b' : '#334155';
+          ctx.lineWidth = (i % 5 === 0) ? 2.5 : 1.5;
+          ctx.stroke();
+        }
+
+        // 4. Draw Scale Min & Max Texts
+        ctx.font = '600 18px "JetBrains Mono", monospace';
+        ctx.fillStyle = '#64748b';
+        ctx.textAlign = 'left';
+        ctx.fillText(`${cfg.min}${cfg.unit}`, cx - radius - 10, cy + 28);
+        ctx.textAlign = 'right';
+        ctx.fillText(`${cfg.max}${cfg.unit}`, cx + radius + 10, cy + 28);
+
+        // 5. Draw Mathematical Needle (100% Symmetrical, Centered Pivot)
+        const needleLen = 78;
+        const nx = cx + needleLen * Math.cos(currentAngle);
+        const ny = cy + needleLen * Math.sin(currentAngle);
+
+        // Needle body
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(nx, ny);
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 4;
+        ctx.lineCap = 'round';
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+        ctx.shadowBlur = 8;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        // Glowing Bead on the Arc
+        const beadX = cx + radius * Math.cos(currentAngle);
+        const beadY = cy + radius * Math.sin(currentAngle);
+        ctx.beginPath();
+        ctx.arc(beadX, beadY, 7, 0, 2 * Math.PI);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+        ctx.strokeStyle = accentColor;
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        // Pivot Center Circles
+        ctx.beginPath();
+        ctx.arc(cx, cy, 12, 0, 2 * Math.PI);
+        ctx.fillStyle = '#172030';
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(cx, cy, 5, 0, 2 * Math.PI);
+        ctx.fillStyle = accentColor;
+        ctx.fill();
+      }
+
+      // Refresh All Dials
+      function renderAll() {
+        drawDial('gaugeAir', state.air, RANGES.air, '#38bdf8');
+        drawDial('gaugeHum', state.hum, RANGES.hum, '#818cf8');
+        drawDial('gaugeWater', state.water, RANGES.water, '#06b6d4');
+
+        // Numerical displays
+        document.getElementById('valAir').textContent = state.air.toFixed(1);
+        document.getElementById('valHum').textContent = state.hum.toFixed(1);
+        document.getElementById('valWater').textContent = state.water.toFixed(1);
+
+        document.getElementById('pillAir').textContent = `${state.air.toFixed(1)}°C`;
+        document.getElementById('pillHum').textContent = `${state.hum.toFixed(1)}%`;
+        document.getElementById('pillWater').textContent = `${state.water.toFixed(1)}°C`;
+
+        // Badges
+        updateBadge('badgeAir', state.air, RANGES.air);
+        updateBadge('badgeHum', state.hum, RANGES.hum);
+        updateBadge('badgeWater', state.water, RANGES.water);
+
+        updateEcoBanner();
+        updateSummaries();
+      }
+
+      function updateBadge(id, val, cfg) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.className = 'status-badge';
+        if (val >= cfg.idealMin && val <= cfg.idealMax) {
+          el.classList.add('status-optimal');
+          el.textContent = 'Optimal';
+        } else if ((val >= cfg.idealMin - 2 && val < cfg.idealMin) || (val > cfg.idealMax && val <= cfg.idealMax + 3)) {
+          el.classList.add('status-warning');
+          el.textContent = 'Waspada';
+        } else {
+          el.classList.add('status-danger');
+          el.textContent = 'Perhatian';
+        }
+      }
+
+      function updateEcoBanner() {
+        let optimalCount = 0;
+        let notes = [];
+
+        if (state.air >= RANGES.air.idealMin && state.air <= RANGES.air.idealMax) optimalCount++;
+        else notes.push(state.air > RANGES.air.idealMax ? 'Suhu udara tinggi' : 'Suhu udara dingin');
+
+        if (state.hum >= RANGES.hum.idealMin && state.hum <= RANGES.hum.idealMax) optimalCount++;
+        else notes.push(state.hum > RANGES.hum.idealMax ? 'Kelembapan tinggi' : 'Udara kering');
+
+        if (state.water >= RANGES.water.idealMin && state.water <= RANGES.water.idealMax) optimalCount++;
+        else notes.push(state.water > RANGES.water.idealMax ? 'Air hangat' : 'Air dingin');
+
+        const title = document.getElementById('ecoTitle');
+        const desc = document.getElementById('ecoDesc');
+        const icon = document.getElementById('ecoIcon');
+        const statusText = document.getElementById('ecoStatusText');
+
+        if (optimalCount === 3) {
+          icon.textContent = '✅';
+          title.textContent = 'Kondisi Hidroponik Optimal';
+          desc.textContent = 'Semua parameter lingkungan dan nutrisi air berada pada batas ideal tanaman.';
+          statusText.textContent = 'Optimal Prima';
+          statusText.style.color = '#38bdf8';
+        } else if (optimalCount >= 2) {
+          icon.textContent = '⚠️';
+          title.textContent = 'Kondisi Cukup Baik';
+          desc.textContent = `Perhatian kecil: ${notes.join(', ')}.`;
+          statusText.textContent = 'Cukup Baik';
+          statusText.style.color = '#fbbf24';
+        } else {
+          icon.textContent = '🔔';
+          title.textContent = 'Perlu Penyesuaian Segera';
+          desc.textContent = `Peringatan: ${notes.join(', ')}. Lakukan tindakan aerasi atau sirkulasi.`;
+          statusText.textContent = 'Perlu Tindakan';
+          statusText.style.color = '#f87171';
+        }
+      }
+
+      function updateSummaries() {
+        if (state.history.length === 0) return;
+        const len = state.history.length;
+        const avgAir = (state.history.reduce((a, b) => a + b.air, 0) / len).toFixed(1);
+        const avgHum = (state.history.reduce((a, b) => a + b.hum, 0) / len).toFixed(1);
+        const avgWater = (state.history.reduce((a, b) => a + b.water, 0) / len).toFixed(1);
+
+        document.getElementById('avgAir').textContent = `${avgAir} °C`;
+        document.getElementById('avgHum').textContent = `${avgHum} %`;
+        document.getElementById('avgWater').textContent = `${avgWater} °C`;
+      }
+
+      // --- Chart.js Realtime Telemetry ---
+      let chart = null;
+      function initChart() {
+        const ctx = document.getElementById('chartCanvas');
+        if (!ctx) return;
+
+        chart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: [],
+            datasets: [
+              {
+                label: 'Suhu Udara (°C)',
+                data: [],
+                borderColor: '#38bdf8',
+                backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                borderWidth: 2.2,
+                tension: 0.35,
+                fill: true,
+                pointRadius: 2,
+                yAxisID: 'yTemp'
+              },
+              {
+                label: 'Kelembapan (%)',
+                data: [],
+                borderColor: '#818cf8',
+                backgroundColor: 'rgba(129, 140, 248, 0.08)',
+                borderWidth: 2.2,
+                tension: 0.35,
+                fill: true,
+                pointRadius: 2,
+                yAxisID: 'yHum'
+              },
+              {
+                label: 'Suhu Air (°C)',
+                data: [],
+                borderColor: '#06b6d4',
+                backgroundColor: 'rgba(6, 182, 212, 0.08)',
+                borderWidth: 2.2,
+                tension: 0.35,
+                fill: true,
+                pointRadius: 2,
+                yAxisID: 'yTemp'
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: { duration: 300 },
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: 'rgba(23, 32, 48, 0.95)',
+                titleColor: '#f8fafc',
+                borderColor: '#38bdf8',
+                borderWidth: 1,
+                padding: 10
+              }
+            },
+            scales: {
+              x: {
+                grid: { color: 'rgba(255, 255, 255, 0.04)' },
+                ticks: { color: '#64748b', font: { family: "'JetBrains Mono', monospace", size: 10 } }
+              },
+              yTemp: {
+                position: 'left',
+                min: 15,
+                max: 42,
+                grid: { color: 'rgba(255, 255, 255, 0.04)' },
+                ticks: { color: '#38bdf8', font: { family: "'JetBrains Mono', monospace", size: 10 }, stepSize: 5 }
+              },
+              yHum: {
+                position: 'right',
+                min: 35,
+                max: 100,
+                grid: { display: false },
+                ticks: { color: '#818cf8', font: { family: "'JetBrains Mono', monospace", size: 10 }, stepSize: 15 }
+              }
+            }
+          }
+        });
+      }
+
+      function pushRecord(a, h, w) {
+        const now = new Date();
+        const t = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+        state.history.push({ time: t, iso: now.toISOString(), air: a, hum: h, water: w });
+        if (state.history.length > state.maxPoints) state.history.shift();
+
+        if (chart) {
+          chart.data.labels.push(t);
+          chart.data.datasets[0].data.push(a);
+          chart.data.datasets[1].data.push(h);
+          chart.data.datasets[2].data.push(w);
+          if (chart.data.labels.length > state.maxPoints) {
+            chart.data.labels.shift();
+            chart.data.datasets.forEach(d => d.data.shift());
+          }
+          chart.update('none');
+        }
+
+        renderAll();
+      }
+
+      function seedInitial() {
+        const now = Date.now();
+        for (let i = 12; i >= 0; i--) {
+          const past = new Date(now - i * 3000);
+          const t = `${String(past.getHours()).padStart(2, '0')}:${String(past.getMinutes()).padStart(2, '0')}:${String(past.getSeconds()).padStart(2, '0')}`;
+          const a = +(25.8 + Math.sin(i / 2) * 0.7).toFixed(1);
+          const h = +(70.2 + Math.cos(i / 2) * 1.8).toFixed(1);
+          const w = +(23.3 + Math.sin(i / 3) * 0.4).toFixed(1);
+
+          state.history.push({ time: t, iso: past.toISOString(), air: a, hum: h, water: w });
+          if (chart) {
+            chart.data.labels.push(t);
+            chart.data.datasets[0].data.push(a);
+            chart.data.datasets[1].data.push(h);
+            chart.data.datasets[2].data.push(w);
+          }
+        }
+        if (chart) chart.update();
+        renderAll();
+      }
+
+      // --- Simulation Engine ---
+      let timer = null;
+      function stepSim() {
+        if (!state.isSimulating) return;
+        const da = (Math.random() - 0.48) * 0.35;
+        const dh = (Math.random() - 0.49) * 0.7;
+        const dw = (Math.random() - 0.49) * 0.2;
+
+        state.air = Math.min(Math.max(+(state.air + da).toFixed(1), 18), 36);
+        state.hum = Math.min(Math.max(+(state.hum + dh).toFixed(1), 45), 90);
+        state.water = Math.min(Math.max(+(state.water + dw).toFixed(1), 16), 30);
+
+        pushRecord(state.air, state.hum, state.water);
+      }
+
+      function startSim() {
+        if (timer) clearInterval(timer);
+        timer = setInterval(stepSim, 2500);
+        state.isSimulating = true;
+        document.getElementById('simBtnIcon').textContent = '⏸️';
+        document.getElementById('simBtnText').textContent = 'Jeda';
+        document.getElementById('liveText').textContent = 'LIVE';
+      }
+
+      function stopSim() {
+        if (timer) clearInterval(timer);
+        state.isSimulating = false;
+        document.getElementById('simBtnIcon').textContent = '▶️';
+        document.getElementById('simBtnText').textContent = 'Lanjut';
+        document.getElementById('liveText').textContent = 'JEDA';
+      }
+
+      document.getElementById('btnSimToggle').addEventListener('click', () => {
+        if (state.isSimulating) stopSim();
+        else startSim();
+      });
+
+      // --- Modal Sliders ---
+      const modal = document.getElementById('settingsModal');
+      document.getElementById('btnOpenModal').addEventListener('click', () => modal.classList.add('active'));
+      document.getElementById('btnCloseModal').addEventListener('click', () => modal.classList.remove('active'));
+      modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('active'); });
+
+      const sAir = document.getElementById('sliderAir');
+      const sHum = document.getElementById('sliderHum');
+      const sWater = document.getElementById('sliderWater');
+
+      sAir.addEventListener('input', (e) => document.getElementById('lblSliderAir').textContent = `${parseFloat(e.target.value).toFixed(1)} °C`);
+      sHum.addEventListener('input', (e) => document.getElementById('lblSliderHum').textContent = `${e.target.value} %`);
+      sWater.addEventListener('input', (e) => document.getElementById('lblSliderWater').textContent = `${parseFloat(e.target.value).toFixed(1)} °C`);
+
+      document.getElementById('btnApplySlider').addEventListener('click', () => {
+        stopSim();
+        state.air = parseFloat(sAir.value);
+        state.hum = parseFloat(sHum.value);
+        state.water = parseFloat(sWater.value);
+        pushRecord(state.air, state.hum, state.water);
+        modal.classList.remove('active');
+      });
+
+      // --- Chart Filter Chips ---
+      [
+        { id: 'chipAir', idx: 0 },
+        { id: 'chipHum', idx: 1 },
+        { id: 'chipWater', idx: 2 }
+      ].forEach(({ id, idx }) => {
+        const btn = document.getElementById(id);
+        btn.addEventListener('click', () => {
+          if (!chart) return;
+          const vis = chart.isDatasetVisible(idx);
+          chart.setDatasetVisibility(idx, !vis);
+          chart.update();
+          btn.classList.toggle('active', !vis);
+        });
+      });
+
+      // --- CSV Download ---
+      document.getElementById('btnExportCSV').addEventListener('click', () => {
+        if (state.history.length === 0) return;
+        let csv = 'Waktu,Waktu_ISO,Suhu_Udara_C,Kelembapan_Persen,Suhu_Air_C\n';
+        state.history.forEach(r => {
+          csv += `${r.time},"${r.iso}",${r.air},${r.hum},${r.water}\n`;
+        });
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `log_telemetri_hidroponik_${Date.now()}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      });
+
+      // Global ESP32 API Hook
+      window.updateHydroponicData = (a, h, w) => {
+        stopSim();
+        state.air = parseFloat(a);
+        state.hum = parseFloat(h);
+        state.water = parseFloat(w);
+        pushRecord(state.air, state.hum, state.water);
+      };
+
+      // Bootstrap
+      initChart();
+      seedInitial();
+      startSim();
+
+      // Handle Resize so dials re-render crisply
+      window.addEventListener('resize', () => renderAll());
+    });
+  </script>
 </body>
 </html>
