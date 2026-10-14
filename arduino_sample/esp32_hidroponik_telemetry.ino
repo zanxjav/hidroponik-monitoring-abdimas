@@ -1,121 +1,448 @@
-/*
-  ESP32 Hydroponic Telemetry Firmware - Abdimas Project
-  Membaca Sensor Suhu & Kelembapan Udara (DHT22) dan Suhu Air Nutrisi (DS18B20)
-  Serta mengirimkan data telemetri serial & HTTP/JSON.
-*/
+#define ENABLE_USER_AUTH
+#define ENABLE_DATABASE
 
 #include <WiFi.h>
+#include <WiFiClientSecure.h>
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
 #include <DHT.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
-#include <HTTPClient.h>
+#include <FirebaseClient.h>
+#include <time.h>
 
-// Konfigurasi Pin Sensor & Aktuator
-#define DHTPIN 4           // Pin Data DHT22 (Suhu & Kelembapan Udara)
-#define DHTTYPE DHT22
-#define ONE_WIRE_BUS 5     // Pin Data DS18B20 (Suhu Air Nutrisi)
-#define RELAY_POMPA_PIN 18 // Pin Relay Pompa Sirkulasi Air Nutrisi
+// =========================================================
+// 1. KONEKSI WIFI
+// =========================================================
+const char* ssid     = "GALAXY A33 5G";
+const char* password = "cicing77";
 
-// Ambang Batas Suhu Air untuk Sirkulasi Otomatis (°C)
-const float AMBANG_SUHU_POMPA = 25.0; // Jika suhu air > 25°C, pompa memutar air agar panas merata & dingin
-bool statusPompa = false;
+// =========================================================
+// 2. FIREBASE REALTIME DATABASE CONFIG
+// =========================================================
+#define API_KEY       "AIzaSyAxPO-OEL2cnlQstspnjkyIq-3VOzYK8KM"
+#define USER_EMAIL    "esp32@greenhouse.local"
+#define USER_PASSWORD "itera123"
+#define DATABASE_URL  "https://greenhouse-firebase-56abd-default-rtdb.asia-southeast1.firebasedatabase.app"
 
-// Konfigurasi WiFi (Opsional jika kirim ke server lokal / cloud)
-const char* ssid = "NAMA_WIFI_ANDA";
-const char* password = "PASSWORD_WIFI";
-const char* serverEndpoint = "http://192.168.1.100:5000/api/telemetry"; // Sesuaikan endpoint
+// =========================================================
+// 3. OBJEK FIREBASE
+// =========================================================
+WiFiClientSecure ssl_client;
+using AsyncClient = AsyncClientClass;
+AsyncClient aClient(ssl_client);
 
-// Inisialisasi Objek Sensor
-DHT dht(DHTPIN, DHTTYPE);
-OneWire oneWire(ONE_WIRE_BUS);
-DallasTemperature waterSensor(&oneWire);
+UserAuth user_auth(API_KEY, USER_EMAIL, USER_PASSWORD);
+FirebaseApp firebaseApp;
+RealtimeDatabase Database;
 
-void setup() {
-  Serial.begin(115200);
-  delay(1000);
-  Serial.println("==================================================");
-  Serial.println(" Sistem Monitoring Hidroponik - Proyek Abdimas");
-  Serial.println(" Inisialisasi Sensor & Relay Pompa...");
-  Serial.println("==================================================");
+// =========================================================
+// 4. PIN SENSOR & AKTUATOR ESP32
+// =========================================================
+#define DHT_PIN       4       // Sensor DHT22 (Suhu & Kelembapan Udara)
+#define DHT_TYPE      DHT22
+#define WATER_PIN     34      // Sensor Level Air Analog (ADC Input)
+#define DS18B20_PIN   18      // Sensor Suhu Air DS18B20 (OneWire)
+#define RELAY_PIN     26      // Relay Pompa Air Hidroponik
 
-  // Inisialisasi DHT22 & DS18B20
-  dht.begin();
-  waterSensor.begin();
+// =========================================================
+// 5. KALIBRASI & LOGIKA SISTEM
+// =========================================================
+#define LCD_ADDRESS   0x27
+#define LCD_COLS      16
+#define LCD_ROWS      2
 
-  // Inisialisasi Relay Pompa Sirkulasi
-  pinMode(RELAY_POMPA_PIN, OUTPUT);
-  digitalWrite(RELAY_POMPA_PIN, LOW); // Pompa mati (standby) saat awal booting
+#define WATER_DRY     1200
+#define WATER_WET     3000
 
-  // Koneksi WiFi (Opsional)
-  /*
-  WiFi.begin(ssid, password);
-  Serial.print("Menghubungkan ke WiFi");
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println("\nWiFi Terhubung! IP: " + WiFi.localIP().toString());
-  */
+const bool RELAY_ACTIVE_LOW = true; // Sebagian besar modul relay aktif LOW
 
-  Serial.println("Sensor & Relay Pompa siap beroperasi!");
+// Batas otomatis pompa pengisian
+const int WATER_PUMP_ON  = 25;  // Level air <= 25% -> Pompa ON
+const int WATER_PUMP_OFF = 80;  // Level air >= 80% -> Pompa OFF
+
+// =========================================================
+// 6. OBJEK SENSOR & VARIABEL
+// =========================================================
+LiquidCrystal_I2C lcd(LCD_ADDRESS, LCD_COLS, LCD_ROWS);
+DHT dht(DHT_PIN, DHT_TYPE);
+
+OneWire oneWire(DS18B20_PIN);
+DallasTemperature waterTempSensor(&oneWire);
+
+float airTemp   = 0.0;
+float humidity  = 0.0;
+float waterTemp = 0.0;
+
+int waterRaw   = 0;
+int waterLevel = 0;
+
+bool pumpOn = false;
+bool page   = false;
+
+// =========================================================
+// 7. TIMER INTERVAL (NON-BLOCKING)
+// =========================================================
+unsigned long lastSensor   = 0;
+unsigned long lastFirebase = 0;
+unsigned long lastDisplay  = 0;
+
+const unsigned long SENSOR_INTERVAL   = 2000;  // Baca sensor tiap 2 detik
+const unsigned long FIREBASE_INTERVAL = 2500;  // Kirim ke cloud tiap 2.5 detik
+const unsigned long PAGE_INTERVAL     = 3000;  // Ganti halaman LCD tiap 3 detik
+
+// =========================================================
+// 8. REQUEST WATCHDOG (ANTI-MACET)
+// =========================================================
+bool firebaseBusy = false;
+unsigned long firebaseReqStart = 0;
+const unsigned long REQUEST_TIMEOUT = 2500; // Reset instan jika 2.5 detik tanpa respon
+
+void checkTimeouts() {
+    if (firebaseBusy && (millis() - firebaseReqStart > REQUEST_TIMEOUT)) {
+        firebaseBusy = false;
+    }
 }
 
+// =========================================================
+// 9. WIFI STATE MANAGEMENT (ROBUST & AUTO-RECONNECT)
+// =========================================================
+enum WifiState {
+    WIFI_IDLE,
+    WIFI_CONNECTING,
+    WIFI_CONNECTED
+};
+
+WifiState wifiState = WIFI_IDLE;
+unsigned long wifiStart = 0;
+unsigned long wifiRetry = 0;
+unsigned long dotTimer  = 0;
+int wifiAttempt = 0;
+
+String wifiStatus(wl_status_t s) {
+    switch (s) {
+        case WL_CONNECTED:        return "CONNECTED";
+        case WL_NO_SSID_AVAIL:    return "NO SSID";
+        case WL_CONNECT_FAILED:   return "FAILED";
+        case WL_DISCONNECTED:     return "DISCONNECTED";
+        default:                  return String((int)s);
+    }
+}
+
+void startWifi() {
+    wifiAttempt++;
+    Serial.println("\n[WIFI] Menghubungkan ke: " + String(ssid));
+
+    WiFi.disconnect(true);
+    delay(100);
+
+    WiFi.mode(WIFI_STA);
+    WiFi.setSleep(false);
+    WiFi.setAutoReconnect(true);
+    WiFi.persistent(true);
+
+    // TX power diatur 11dBm agar suplai daya stabil (anti brownout/reset diam-diam)
+    WiFi.setTxPower(WIFI_POWER_11dBm);
+
+    WiFi.begin(ssid, password);
+
+    wifiStart = millis();
+    dotTimer  = millis();
+    wifiState = WIFI_CONNECTING;
+}
+
+void updateWifi() {
+    switch (wifiState) {
+        case WIFI_IDLE:
+            if (millis() - wifiRetry > 2000) {
+                startWifi();
+            }
+            break;
+
+        case WIFI_CONNECTING: {
+            wl_status_t status = WiFi.status();
+            if (status == WL_CONNECTED) {
+                Serial.println("\n[WIFI] TERHUBUNG!");
+                Serial.print("[WIFI] IP ESP32: ");
+                Serial.println(WiFi.localIP());
+
+                wifiState = WIFI_CONNECTED;
+                wifiAttempt = 0;
+            } else {
+                if (millis() - dotTimer > 500) {
+                    Serial.print(".");
+                    dotTimer = millis();
+                }
+
+                if (millis() - wifiStart > 10000) {
+                    Serial.println("\n[WIFI] Timeout: " + wifiStatus(status));
+                    WiFi.disconnect(true);
+                    wifiState = WIFI_IDLE;
+                    wifiRetry = millis();
+                }
+            }
+            break;
+        }
+
+        case WIFI_CONNECTED:
+            if (WiFi.status() != WL_CONNECTED) {
+                Serial.println("\n[WIFI] Terputus! Reconnecting...");
+                wifiState = WIFI_IDLE;
+                wifiRetry = millis();
+                firebaseBusy = false;
+            }
+            break;
+    }
+}
+
+// =========================================================
+// 10. FIREBASE STATE & CALLBACK
+// =========================================================
+bool firebaseStarted  = false;
+bool firebaseWasReady = false;
+
+void firebaseCallback(AsyncResult &aResult) {
+    if (aResult.isError()) {
+        Serial.printf("[FIREBASE ERROR] Code: %d | %s\n", aResult.error().code(), aResult.error().message().c_str());
+    }
+}
+
+void startFirebase() {
+    if (firebaseStarted) return;
+    Serial.println("[FIREBASE] Inisialisasi...");
+    ssl_client.setInsecure();
+
+    firebaseApp.setCallback(firebaseCallback);
+    initializeApp(aClient, firebaseApp, getAuth(user_auth));
+    firebaseApp.getApp<RealtimeDatabase>(Database);
+    Database.url(DATABASE_URL);
+
+    firebaseStarted = true;
+    Serial.println("[FIREBASE] Siap!");
+}
+
+bool firebaseReady() {
+    if (!firebaseStarted) return false;
+    if (!firebaseApp.ready()) {
+        if (firebaseWasReady) firebaseWasReady = false;
+        return false;
+    }
+    if (!firebaseWasReady) {
+        Serial.println("[FIREBASE] Ready & Connected!");
+        firebaseWasReady = true;
+    }
+    return true;
+}
+
+// =========================================================
+// 11. KONTROL RELAY POMPA
+// =========================================================
+void setPump(bool state) {
+    pumpOn = state;
+    if (RELAY_ACTIVE_LOW) {
+        digitalWrite(RELAY_PIN, state ? LOW : HIGH);
+    } else {
+        digitalWrite(RELAY_PIN, state ? HIGH : LOW);
+    }
+}
+
+// =========================================================
+// 12. BACA SEMUA SENSOR & LOGIKA OTOMATIS
+// =========================================================
+void readSensors() {
+    // 1. DHT22
+    float t = dht.readTemperature();
+    float h = dht.readHumidity();
+    if (!isnan(t)) airTemp = t;
+    if (!isnan(h)) humidity = h;
+
+    // 2. Level Air Analog
+    waterRaw = analogRead(WATER_PIN);
+    waterLevel = map(waterRaw, WATER_DRY, WATER_WET, 0, 100);
+    waterLevel = constrain(waterLevel, 0, 100);
+
+    // 3. Suhu Air DS18B20
+    waterTempSensor.requestTemperatures();
+    float wt = waterTempSensor.getTempCByIndex(0);
+    if (wt != DEVICE_DISCONNECTED_C && wt >= -55.0 && wt <= 125.0) {
+        waterTemp = wt;
+    }
+
+    // 4. Logika Pompa Air Otomatis
+    if (waterLevel <= WATER_PUMP_ON) {
+        setPump(true);
+    } else if (waterLevel >= WATER_PUMP_OFF) {
+        setPump(false);
+    }
+
+    // 5. Cetak ke Serial Monitor
+    Serial.println("\n-----------------------------------------");
+    Serial.println("🌱 [MONITORING HIDROPONIK ESP32]");
+    Serial.printf("   Suhu Udara  : %.1f °C\n", airTemp);
+    Serial.printf("   Kelembapan  : %.1f %%\n", humidity);
+    Serial.printf("   Level Air   : %d %% (ADC: %d)\n", waterLevel, waterRaw);
+    Serial.printf("   Suhu Air    : %.1f °C\n", waterTemp);
+    Serial.printf("   Status Pompa: %s\n", pumpOn ? "ON (HIDUP)" : "OFF (MATI)");
+    Serial.println("-----------------------------------------");
+}
+
+// =========================================================
+// 13. KIRIM DATA KE FIREBASE (/hidroponik/current)
+// =========================================================
+void currentCallback(AsyncResult &aResult) {
+    firebaseBusy = false;
+    if (aResult.isError()) {
+        Serial.printf("[FIREBASE ERROR] %s\n", aResult.error().message().c_str());
+    } else {
+        Serial.println("☁️ [FIREBASE SYNC] Sukses update ke Web GitHub Pages!");
+    }
+}
+
+void sendDataToFirebase() {
+    if (!firebaseReady() || firebaseBusy) return;
+
+    // Format JSON yang langsung diterima oleh index.html GitHub Pages
+    String json = "{";
+    json += "\"suhu_udara\":"   + String(airTemp, 1)    + ",";
+    json += "\"kelembapan\":"    + String(humidity, 1)   + ",";
+    json += "\"suhu_air\":"     + String(waterTemp, 1)  + ",";
+    json += "\"level_air\":"    + String(waterLevel)    + ",";
+    json += "\"water_raw\":"    + String(waterRaw)      + ",";
+    json += "\"pompa_status\":" + String(pumpOn ? "true" : "false") + ",";
+    json += "\"pompa\":\""      + String(pumpOn ? "ON" : "OFF")    + "\"";
+    json += "}";
+
+    firebaseBusy = true;
+    firebaseReqStart = millis();
+
+    Serial.println("🚀 [KIRIM CLOUD] " + json);
+    Database.set<object_t>(aClient, "/hidroponik/current", object_t(json), currentCallback);
+}
+
+// =========================================================
+// 14. TAMPILAN LCD I2C 16x2
+// =========================================================
+void displayLCD() {
+    lcd.clear();
+
+    if (!page) {
+        // Halaman 1: Udara & Pompa
+        lcd.setCursor(0, 0);
+        lcd.print("Udara:");
+        lcd.print(airTemp, 1);
+        lcd.print((char)223);
+        lcd.print("C");
+
+        lcd.setCursor(0, 1);
+        lcd.print("RH:");
+        lcd.print(humidity, 1);
+        lcd.print("%");
+
+        lcd.print(" Pmp:");
+        lcd.print(pumpOn ? "ON" : "OFF");
+    } else {
+        // Halaman 2: Level Air, Suhu Air, dan Status Cloud
+        lcd.setCursor(0, 0);
+        lcd.print("Lvl:");
+        lcd.print(waterLevel);
+        lcd.print("% ADC:");
+        lcd.print(waterRaw);
+
+        lcd.setCursor(0, 1);
+        lcd.print("Air:");
+        lcd.print(waterTemp, 1);
+        lcd.print((char)223);
+        lcd.print("C ");
+
+        if (firebaseReady()) {
+            lcd.print("[IoT]");
+        } else if (wifiState == WIFI_CONNECTED) {
+            lcd.print("[NET]");
+        } else {
+            lcd.print("[OFF]");
+        }
+    }
+}
+
+// =========================================================
+// 15. SETUP
+// =========================================================
+void setup() {
+    Serial.begin(115200);
+    delay(500);
+
+    Serial.println("\n==========================================");
+    Serial.println("  ESP32 HIDROPONIK - GITHUB PAGES CLOUD   ");
+    Serial.println("==========================================");
+
+    // Relay Pompa
+    digitalWrite(RELAY_PIN, RELAY_ACTIVE_LOW ? HIGH : LOW);
+    pinMode(RELAY_PIN, OUTPUT);
+
+    // ADC ESP32 12-bit
+    analogReadResolution(12);
+
+    // LCD I2C
+    Wire.begin(21, 22);
+    lcd.init();
+    lcd.backlight();
+    lcd.setCursor(0, 0);
+    lcd.print("Hidroponik ESP32");
+    lcd.setCursor(0, 1);
+    lcd.print("Inisialisasi...");
+
+    // Sensor
+    dht.begin();
+    waterTempSensor.begin();
+    delay(1000);
+
+    // WiFi
+    wifiRetry = millis() - 2000;
+    wifiState = WIFI_IDLE;
+
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Koneksi WiFi...");
+    lcd.setCursor(0, 1);
+    lcd.print(ssid);
+
+    // Inisialisasi Firebase Cloud
+    startFirebase();
+}
+
+// =========================================================
+// 16. MAIN LOOP
+// =========================================================
 void loop() {
-  // 1. Baca DHT22
-  float humidity = dht.readHumidity();
-  float airTemp = dht.readTemperature();
+    // 1. Kelola WiFi
+    updateWifi();
 
-  // 2. Baca DS18B20
-  waterSensor.requestTemperatures();
-  float waterTemp = waterSensor.getTempCByIndex(0);
+    if (wifiState == WIFI_CONNECTED) {
+        firebaseApp.loop();
+        checkTimeouts();
 
-  // Validasi pembacaan DHT
-  if (isnan(humidity) || isnan(airTemp)) {
-    Serial.println("Peringatan: Gagal membaca sensor DHT22!");
-    airTemp = 26.0;
-    humidity = 68.0;
-  }
+        unsigned long currentMillis = millis();
 
-  // Validasi pembacaan DS18B20
-  if (waterTemp == DEVICE_DISCONNECTED_C) {
-    Serial.println("Peringatan: Sensor DS18B20 air nutrisi terputus!");
-    waterTemp = 24.0;
-  }
+        // 2. Baca Sensor & Kontrol Pompa (Tiap 2 Detik)
+        if (currentMillis - lastSensor >= SENSOR_INTERVAL) {
+            lastSensor = currentMillis;
+            readSensors();
+        }
 
-  // 3. Logika Otomatisasi Pompa Air Sirkulasi:
-  // Ketika suhu air melewati ambang batas (> 25°C), pompa memutar air agar panas merata dan mendingin.
-  if (waterTemp > AMBANG_SUHU_POMPA) {
-    digitalWrite(RELAY_POMPA_PIN, HIGH); // Aktifkan relay pompa
-    statusPompa = true;
-  } else if (waterTemp <= (AMBANG_SUHU_POMPA - 0.5)) {
-    // Histeresis 0.5°C agar relay tidak bolak-balik hidup-mati cepat
-    digitalWrite(RELAY_POMPA_PIN, LOW);  // Matikan relay pompa
-    statusPompa = false;
-  }
+        // 3. Kirim Data Real-Time ke Firebase (Tiap 2.5 Detik)
+        if (currentMillis - lastFirebase >= FIREBASE_INTERVAL) {
+            lastFirebase = currentMillis;
+            sendDataToFirebase();
+        }
+    }
 
-  // 4. Format Output JSON Serial
-  String jsonPayload = "{";
-  jsonPayload += "\"suhu_udara\":" + String(airTemp, 1) + ",";
-  jsonPayload += "\"kelembapan\":" + String(humidity, 1) + ",";
-  jsonPayload += "\"suhu_air\":" + String(waterTemp, 1) + ",";
-  jsonPayload += "\"pompa\":\"" + String(statusPompa ? "HIDUP" : "STANDBY") + "\",";
-  jsonPayload += "\"pompa_status\":" + String(statusPompa ? "true" : "false");
-  jsonPayload += "}";
+    // 4. Update LCD (Tiap 3 Detik)
+    if (millis() - lastDisplay >= PAGE_INTERVAL) {
+        lastDisplay = millis();
+        page = !page;
+        displayLCD();
+    }
 
-  Serial.println("DATA TELEMETRI: " + jsonPayload);
-
-  // 5. Pengiriman HTTP POST (Jika terhubung WiFi)
-  /*
-  if (WiFi.status() == WL_CONNECTED) {
-    HTTPClient http;
-    http.begin(serverEndpoint);
-    http.addHeader("Content-Type", "application/json");
-    int httpResponseCode = http.POST(jsonPayload);
-    Serial.print("HTTP Response code: ");
-    Serial.println(httpResponseCode);
-    http.end();
-  }
-  */
-
-  delay(3000); // Interval pembacaan 3 detik
+    yield();
+    delay(1);
 }

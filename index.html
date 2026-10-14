@@ -18,6 +18,11 @@
   <!-- Chart.js CDN with fallback -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
+  <!-- Firebase 9 Compat SDK (Direct Realtime Database to GitHub Pages) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
   <!-- Complete Inlined Design System & Stylesheet (100% Reliable, No External CSS Dependency Fails) -->
   <style>
     :root {
@@ -579,7 +584,7 @@
     /* Summary Bar */
     .summary-grid {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
       gap: 12px;
     }
 
@@ -879,6 +884,7 @@
         <span class="eco-pill">Suhu: <strong id="pillAir">25.8°C</strong></span>
         <span class="eco-pill">Hum: <strong id="pillHum">70.2%</strong></span>
         <span class="eco-pill">Air: <strong id="pillWater">23.3°C</strong></span>
+        <span class="eco-pill">Level: <strong id="pillWaterLevel">75%</strong></span>
         <span class="eco-pill" id="ecoPillPump">Pompa: <strong id="pillPumpText" style="color: #64748b;">STANDBY</strong></span>
       </div>
     </section>
@@ -1006,10 +1012,17 @@
           <span class="summary-card-val" id="avgWater">23.6 °C</span>
         </div>
       </div>
+      <div class="summary-card" id="cardWaterLevel">
+        <div class="summary-card-icon">🚰</div>
+        <div class="summary-card-text">
+          <span class="summary-card-label">Level Air Tandon</span>
+          <span class="summary-card-val" id="waterLevelVal">75 %</span>
+        </div>
+      </div>
       <div class="summary-card" id="cardPumpSummary">
         <div class="summary-card-icon" id="pumpSummaryIcon">🌀</div>
         <div class="summary-card-text">
-          <span class="summary-card-label">Pompa Sirkulasi Air</span>
+          <span class="summary-card-label">Pompa Air</span>
           <span class="summary-card-val" id="pumpSummaryVal" style="color: #64748b;">STANDBY (Mati)</span>
         </div>
       </div>
@@ -1652,11 +1665,20 @@
       });
 
       // Global ESP32 API Hook
-      window.updateHydroponicData = (a, h, w, pump = null) => {
+      window.updateHydroponicData = (a, h, w, pump = null, level = null, raw = null) => {
         stopSim();
         state.air = parseFloat(a);
         state.hum = parseFloat(h);
         state.water = parseFloat(w);
+        if (level !== null && level !== undefined) {
+          state.waterLevel = parseInt(level);
+          const pL = document.getElementById('pillWaterLevel');
+          if (pL) pL.textContent = `${state.waterLevel}%`;
+          const wV = document.getElementById('waterLevelVal');
+          if (wV) {
+            wV.textContent = `${state.waterLevel} %` + (raw !== null && raw !== undefined ? ` (ADC: ${raw})` : '');
+          }
+        }
         if (pump !== null) {
           state.pumpMode = 'hardware';
           state.pumpStatus = (pump === true || pump === 'ON' || pump === 1 || pump === '1');
@@ -1664,10 +1686,89 @@
         pushRecord(state.air, state.hum, state.water);
       };
 
+      // Realtime Telemetry Poller dari Server Flask (ESP32)
+      async function pollServerTelemetry() {
+        try {
+          const res = await fetch('/api/telemetry');
+          if (!res.ok) return;
+          const json = await res.json();
+          if (json.status === 'success' && json.data) {
+            const d = json.data;
+            if (d.is_hardware) {
+              const liveText = document.getElementById('liveText');
+              if (liveText) {
+                liveText.textContent = 'ESP32 ONLINE';
+                liveText.style.color = '#38bdf8';
+              }
+            }
+            window.updateHydroponicData(
+              d.suhu_udara,
+              d.kelembapan,
+              d.suhu_air,
+              d.pompa_status,
+              d.level_air,
+              d.water_raw
+            );
+          }
+        } catch (e) {
+          // Berjalan normal di mode statis / file:/// jika server belum dinyalakan
+        }
+      }
+
+      // =========================================================
+      // Firebase Realtime Listener for GitHub Pages (Cloud IoT)
+      // =========================================================
+      const firebaseConfig = {
+        apiKey: "AIzaSyAxPO-OEL2cnlQstspnjkyIq-3VOzYK8KM",
+        authDomain: "greenhouse-firebase-56abd.firebaseapp.com",
+        databaseURL: "https://greenhouse-firebase-56abd-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "greenhouse-firebase-56abd"
+      };
+
+      try {
+        if (typeof firebase !== 'undefined' && firebase.initializeApp) {
+          firebase.initializeApp(firebaseConfig);
+          firebase.auth().signInWithEmailAndPassword("esp32@greenhouse.local", "itera123")
+            .then(() => {
+              const liveText = document.getElementById('liveText');
+              if (liveText) {
+                liveText.textContent = 'FIREBASE READY';
+              }
+              const dbRef = firebase.database().ref("/hidroponik/current");
+              dbRef.on("value", (snapshot) => {
+                const d = snapshot.val();
+                if (d) {
+                  if (liveText) {
+                    liveText.textContent = 'LIVE CLOUD';
+                    liveText.style.color = '#38bdf8';
+                  }
+                  window.updateHydroponicData(
+                    d.suhu_udara !== undefined ? d.suhu_udara : d.temperature,
+                    d.kelembapan !== undefined ? d.kelembapan : d.humidity,
+                    d.suhu_air !== undefined ? d.suhu_air : d.waterTemp,
+                    d.pompa_status !== undefined ? d.pompa_status : d.blower,
+                    d.level_air,
+                    d.water_raw
+                  );
+                }
+              });
+            })
+            .catch((err) => {
+              console.warn("Firebase Auth Error:", err);
+            });
+        }
+      } catch (err) {
+        console.warn("Firebase Init Error:", err);
+      }
+
       // Bootstrap
       initChart();
       seedInitial();
       startSim();
+
+      // Mulai polling real-time dari server lokal (fallback jika dijalankan offline/Flask)
+      setInterval(pollServerTelemetry, 2000);
+      pollServerTelemetry();
 
       // Handle Resize so dials re-render crisply
       window.addEventListener('resize', () => renderAll());

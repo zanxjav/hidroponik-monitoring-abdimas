@@ -17,6 +17,8 @@ state = {
     "air_temp": 26.4,
     "humidity": 68.2,
     "water_temp": 23.8,
+    "water_level": 75,
+    "water_raw": 2400,
     "pump_status": False,
     "pump_threshold": 25.0,
     "is_simulating": True,
@@ -33,6 +35,7 @@ for i in range(15, 0, -1):
         "air_temp": round(25.8 + random.uniform(-0.5, 0.7), 1),
         "humidity": round(67.5 + random.uniform(-1.5, 2.0), 1),
         "water_temp": w_t,
+        "water_level": random.randint(70, 85),
         "pump_status": w_t > 25.0
     })
 
@@ -65,6 +68,7 @@ def simulation_worker():
                 "air_temp": state["air_temp"],
                 "humidity": state["humidity"],
                 "water_temp": state["water_temp"],
+                "water_level": state.get("water_level", 75),
                 "pump_status": state["pump_status"]
             }
             state["history"].append(entry)
@@ -91,9 +95,12 @@ def get_telemetry():
             "suhu_udara": state["air_temp"],
             "kelembapan": state["humidity"],
             "suhu_air": state["water_temp"],
+            "level_air": state.get("water_level", 0),
+            "water_raw": state.get("water_raw", 0),
             "pompa_status": state["pump_status"],
-            "pompa_keterangan": "HIDUP (Memutar Air)" if state["pump_status"] else "STANDBY (Mati)",
-            "timestamp": datetime.now().strftime("%H:%M:%S WIB")
+            "pompa_keterangan": "HIDUP (Aktif)" if state["pump_status"] else "STANDBY (Mati)",
+            "timestamp": datetime.now().strftime("%H:%M:%S WIB"),
+            "is_hardware": not state["is_simulating"]
         }
     })
 
@@ -111,10 +118,16 @@ def post_telemetry():
         state["humidity"] = float(data["kelembapan"])
     if "suhu_air" in data:
         state["water_temp"] = float(data["suhu_air"])
+    if "level_air" in data:
+        state["water_level"] = int(data["level_air"])
+    elif "water_level" in data:
+        state["water_level"] = int(data["water_level"])
+    if "water_raw" in data:
+        state["water_raw"] = int(data["water_raw"])
     if "pompa_status" in data:
         state["pump_status"] = bool(data["pompa_status"])
     elif "pompa" in data:
-        state["pump_status"] = data["pompa"].upper() in ["HIDUP", "ON", "TRUE", "1"]
+        state["pump_status"] = str(data["pompa"]).upper() in ["HIDUP", "ON", "TRUE", "1"]
     else:
         state["pump_status"] = state["water_temp"] > state["pump_threshold"]
 
@@ -123,13 +136,18 @@ def post_telemetry():
         "air_temp": state["air_temp"],
         "humidity": state["humidity"],
         "water_temp": state["water_temp"],
+        "water_level": state.get("water_level", 0),
         "pump_status": state["pump_status"]
     }
     state["history"].append(entry)
     if len(state["history"]) > 30:
         state["history"].pop(0)
 
-    return jsonify({"status": "success", "message": "Data berhasil diperbarui", "pompa_status": state["pump_status"]}), 200
+    return jsonify({
+        "status": "success",
+        "message": "Data berhasil diperbarui dari ESP32",
+        "pompa_status": state["pump_status"]
+    }), 200
 
 @app.route('/api/history', methods=['GET'])
 def get_history():
