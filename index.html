@@ -323,10 +323,10 @@
       color: var(--sky-main);
     }
 
-    /* 3 Dial Gauge Cards Grid */
+    /* 4 Dial Gauge Cards Grid (All ESP32 Sensors) */
     .gauges-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       gap: 16px;
     }
 
@@ -375,6 +375,137 @@
     .icon-air { background: rgba(56, 189, 248, 0.15); color: var(--color-air); border: 1px solid rgba(56, 189, 248, 0.3); }
     .icon-hum { background: rgba(129, 140, 248, 0.15); color: var(--color-hum); border: 1px solid rgba(129, 140, 248, 0.3); }
     .icon-water { background: rgba(6, 182, 212, 0.15); color: var(--color-water); border: 1px solid rgba(6, 182, 212, 0.3); }
+    .icon-level { background: rgba(14, 165, 233, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); }
+    .dot-level { background: #38bdf8; box-shadow: 0 0 6px #38bdf8; }
+
+    /* Smart Microclimate & Agronomy Insights */
+    .agro-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-top: 6px;
+    }
+
+    .agro-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      transition: all 0.25s ease;
+    }
+
+    .agro-card:hover {
+      border-color: rgba(56, 189, 248, 0.35);
+      background: var(--bg-card-hover);
+    }
+
+    .agro-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--text-dark);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .agro-val-row {
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+    }
+
+    .agro-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: var(--text-main);
+      line-height: 1;
+    }
+
+    .agro-unit {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--sky-main);
+    }
+
+    .agro-desc {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      line-height: 1.3;
+    }
+
+    /* Dedicated Water Tank & Pump Automation Bar */
+    .tank-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-lg);
+      padding: 16px 20px;
+      box-shadow: var(--shadow-main);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 4px;
+    }
+
+    .tank-panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .tank-panel-head h3 {
+      font-size: 0.96rem;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tank-bar-track {
+      width: 100%;
+      height: 18px;
+      background: var(--bg-card-subtle);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-pill);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .tank-bar-fill {
+      height: 100%;
+      width: 75%;
+      background: linear-gradient(90deg, #0284c7, #38bdf8);
+      border-radius: var(--radius-pill);
+      transition: width 0.6s ease;
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
+    }
+
+    .tank-bar-marker {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: rgba(255, 255, 255, 0.4);
+      z-index: 2;
+    }
+
+    .tank-meta-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.74rem;
+      color: var(--text-muted);
+      flex-wrap: wrap;
+      gap: 8px;
+    }
 
     .param-info h3 {
       font-size: 0.94rem;
@@ -818,8 +949,19 @@
     }
 
     /* Responsive Mobile Breakpoint */
-    @media (max-width: 900px) {
+    @media (max-width: 1200px) {
       .gauges-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .agro-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    @media (max-width: 768px) {
+      .gauges-grid {
+        grid-template-columns: 1fr;
+      }
+      .agro-grid {
         grid-template-columns: 1fr;
       }
       .summary-grid {
@@ -944,14 +1086,14 @@
         </div>
       </article>
 
-      <!-- Card 3: Suhu Air Nutrisi -->
+      <!-- Card 3: Suhu Air Nutrisi (DS18B20) -->
       <article class="gauge-card">
         <div class="gauge-card-header">
           <div class="param-info">
             <div class="param-badge-icon icon-water">🌊</div>
             <div>
               <h3>Suhu Air Nutrisi</h3>
-              <span>Nutrient Water</span>
+              <span>Sensor DS18B20 (Pin 18)</span>
             </div>
           </div>
           <span class="status-badge status-optimal" id="badgeWater">Optimal</span>
@@ -967,27 +1109,113 @@
             <span class="display-unit">°C</span>
           </div>
           <div class="ideal-tag">🎯 Rentang Ideal: 18°C – 25°C</div>
+        </div>
+      </article>
 
-          <!-- Pompa Air Sirkulasi Nutrisi Widget -->
-          <div class="pump-widget" id="pumpWidget">
-            <div class="pump-widget-left">
-              <span class="pump-rotor" id="pumpRotor">🌀</span>
-              <div>
-                <div class="pump-title-row">
-                  <span>Pompa Sirkulasi:</span>
-                  <strong id="pumpStateBadge" class="pump-badge-state pump-badge-off">STANDBY (Mati)</strong>
-                </div>
-                <p class="pump-hint-text" id="pumpHintText">Suhu air &le; 25.0°C (Air aman, pompa mati)</p>
-              </div>
+      <!-- Card 4: Level Air Tandon (Sensor Analog Pin 34) -->
+      <article class="gauge-card">
+        <div class="gauge-card-header">
+          <div class="param-info">
+            <div class="param-badge-icon icon-level">🚰</div>
+            <div>
+              <h3>Level Air Tandon</h3>
+              <span>Sensor Level Air (Pin 34)</span>
             </div>
-            <button class="btn-pump-mode" id="btnPumpToggle" title="Klik untuk mengalihkan Otomatis / Manual">
-              AUTO
-            </button>
           </div>
+          <span class="status-badge status-optimal" id="badgeLevel">Optimal</span>
+        </div>
+
+        <div class="canvas-container">
+          <canvas id="gaugeLevel" class="canvas-gauge" width="480" height="280"></canvas>
+        </div>
+
+        <div class="readout-box">
+          <div class="val-and-unit">
+            <span class="display-number" id="valLevel">75</span>
+            <span class="display-unit">%</span>
+          </div>
+          <div class="ideal-tag">🎯 Rentang Aman: 40% – 90%</div>
         </div>
       </article>
 
     </main>
+
+    <!-- Dedicated Water Tank & Pump Automation Bar -->
+    <section class="tank-panel">
+      <div class="tank-panel-head">
+        <h3><span>🚰</span> Tangki Nutrisi &amp; Kontrol Pompa Pengisian Otomatis (Relay Pin 26)</h3>
+        <div class="pump-title-row">
+          <span>Status Pompa:</span>
+          <strong id="pumpStateBadge" class="pump-badge-state pump-badge-off">STANDBY (Mati)</strong>
+          <button class="btn-pump-mode" id="btnPumpToggle" title="Klik untuk mengalihkan Otomatis / Manual">
+            AUTO
+          </button>
+        </div>
+      </div>
+
+      <div class="tank-bar-track">
+        <div class="tank-bar-fill" id="tankBarFill" style="width: 75%;"></div>
+        <div class="tank-bar-marker" style="left: 25%;" title="Batas Pompa ON (<= 25%)"></div>
+        <div class="tank-bar-marker" style="left: 80%;" title="Batas Pompa OFF (>= 80%)"></div>
+      </div>
+
+      <div class="tank-meta-row">
+        <span>Ketinggian Air: <strong id="tankPercentText">75%</strong> (ADC Mentah: <strong id="tankAdcText">2400 / 4095</strong>)</span>
+        <span>Logika ESP32: <strong style="color: #38bdf8;">Air &le; 25% Pompa ON</strong> &bull; <strong style="color: #38bdf8;">Air &ge; 80% Pompa OFF</strong></span>
+        <span id="pumpHintText">Air tandon cukup (Pompa standby)</span>
+      </div>
+    </section>
+
+    <!-- Smart Microclimate & Agronomy Insights Grid -->
+    <section class="agro-grid">
+      <div class="agro-card">
+        <div class="agro-head">
+          <span>VPD (Defisit Tekanan Uap)</span>
+          <span>🌿 Transpirasi</span>
+        </div>
+        <div class="agro-val-row">
+          <span class="agro-val" id="valVpd">0.95</span>
+          <span class="agro-unit">kPa</span>
+        </div>
+        <p class="agro-desc" id="descVpd">Ideal untuk penyerapan nutrisi daun tanaman hidroponik (0.8 - 1.2 kPa).</p>
+      </div>
+
+      <div class="agro-card">
+        <div class="agro-head">
+          <span>Heat Index (Suhu Terasa)</span>
+          <span>🌡️ Mikroklimat</span>
+        </div>
+        <div class="agro-val-row">
+          <span class="agro-val" id="valHeatIndex">27.2</span>
+          <span class="agro-unit">°C</span>
+        </div>
+        <p class="agro-desc" id="descHeatIndex">Kombinasi suhu udara aktual dengan kelembapan relatif lingkungan.</p>
+      </div>
+
+      <div class="agro-card">
+        <div class="agro-head">
+          <span>Titik Embun (Dew Point)</span>
+          <span>💧 Kondensasi</span>
+        </div>
+        <div class="agro-val-row">
+          <span class="agro-val" id="valDewPoint">19.8</span>
+          <span class="agro-unit">°C</span>
+        </div>
+        <p class="agro-desc" id="descDewPoint">Suhu ketika uap air mulai mengembun. Aman dari risiko jamur daun.</p>
+      </div>
+
+      <div class="agro-card">
+        <div class="agro-head">
+          <span>Sensor ADC Mentah (Raw)</span>
+          <span>⚡ Pin 34 ESP32</span>
+        </div>
+        <div class="agro-val-row">
+          <span class="agro-val" id="valRawAdc">2400</span>
+          <span class="agro-unit">/ 4095</span>
+        </div>
+        <p class="agro-desc" id="descRawAdc">Nilai tegangan analog 12-bit sensor level air sebelum dikonversi.</p>
+      </div>
+    </section>
 
     <!-- Summary Metrics Row -->
     <section class="summary-grid">
@@ -1039,6 +1267,7 @@
           <button class="chip-btn active" id="chipAir"><span class="chip-dot dot-air"></span> Suhu Udara</button>
           <button class="chip-btn active" id="chipHum"><span class="chip-dot dot-hum"></span> Kelembapan</button>
           <button class="chip-btn active" id="chipWater"><span class="chip-dot dot-water"></span> Suhu Air</button>
+          <button class="chip-btn active" id="chipLevel"><span class="chip-dot dot-level"></span> Level Air</button>
           <button class="btn btn-outline" style="padding: 4px 10px; font-size: 0.72rem;" id="btnExportCSV">📥 Unduh CSV</button>
         </div>
       </div>
@@ -1067,7 +1296,7 @@
         
         <div class="slider-row">
           <div class="slider-lbl-box">
-            <span>Suhu Udara</span>
+            <span>Suhu Udara (DHT22)</span>
             <strong id="lblSliderAir">25.8 °C</strong>
           </div>
           <input type="range" id="sliderAir" min="15" max="45" step="0.2" value="25.8">
@@ -1075,7 +1304,7 @@
 
         <div class="slider-row">
           <div class="slider-lbl-box">
-            <span>Kelembapan Udara</span>
+            <span>Kelembapan Udara (DHT22)</span>
             <strong id="lblSliderHum">70.2 %</strong>
           </div>
           <input type="range" id="sliderHum" min="30" max="95" step="1" value="70">
@@ -1083,7 +1312,7 @@
 
         <div class="slider-row">
           <div class="slider-lbl-box">
-            <span>Suhu Air Nutrisi</span>
+            <span>Suhu Air Nutrisi (DS18B20)</span>
             <strong id="lblSliderWater">23.3 °C</strong>
           </div>
           <input type="range" id="sliderWater" min="15" max="35" step="0.2" value="23.3">
@@ -1091,7 +1320,15 @@
 
         <div class="slider-row">
           <div class="slider-lbl-box">
-            <span>Ambang Suhu Pompa Hidup (Pemicu)</span>
+            <span>Level Air Tandon (Pin 34)</span>
+            <strong id="lblSliderLevel">75 %</strong>
+          </div>
+          <input type="range" id="sliderLevel" min="0" max="100" step="1" value="75">
+        </div>
+
+        <div class="slider-row">
+          <div class="slider-lbl-box">
+            <span>Ambang Suhu Pompa Hidup</span>
             <strong id="lblSliderThresh">25.0 °C</strong>
           </div>
           <input type="range" id="sliderThresh" min="20" max="30" step="0.5" value="25.0">
@@ -1110,6 +1347,7 @@
         air: { min: 0, max: 50, idealMin: 22, idealMax: 28, unit: '°C' },
         hum: { min: 0, max: 100, idealMin: 60, idealMax: 80, unit: '%' },
         water: { min: 0, max: 45, idealMin: 18, idealMax: 25, unit: '°C' },
+        level: { min: 0, max: 100, idealMin: 40, idealMax: 90, unit: '%' }
       };
 
       // State
@@ -1117,6 +1355,8 @@
         air: 25.8,
         hum: 70.2,
         water: 23.3,
+        level: 75,
+        waterRaw: 2400,
         isSimulating: true,
         pumpStatus: false,
         pumpMode: 'auto',
@@ -1252,25 +1492,78 @@
         ctx.fill();
       }
 
-      // Refresh All Dials
+      // Refresh All Dials & Sensor Displays
       function renderAll() {
         drawDial('gaugeAir', state.air, RANGES.air, '#38bdf8');
         drawDial('gaugeHum', state.hum, RANGES.hum, '#818cf8');
         drawDial('gaugeWater', state.water, RANGES.water, '#06b6d4');
+        drawDial('gaugeLevel', state.level, RANGES.level, '#38bdf8');
 
         // Numerical displays
-        document.getElementById('valAir').textContent = state.air.toFixed(1);
-        document.getElementById('valHum').textContent = state.hum.toFixed(1);
-        document.getElementById('valWater').textContent = state.water.toFixed(1);
+        const elValAir = document.getElementById('valAir');
+        const elValHum = document.getElementById('valHum');
+        const elValWater = document.getElementById('valWater');
+        const elValLevel = document.getElementById('valLevel');
 
-        document.getElementById('pillAir').textContent = `${state.air.toFixed(1)}°C`;
-        document.getElementById('pillHum').textContent = `${state.hum.toFixed(1)}%`;
-        document.getElementById('pillWater').textContent = `${state.water.toFixed(1)}°C`;
+        if (elValAir) elValAir.textContent = state.air.toFixed(1);
+        if (elValHum) elValHum.textContent = state.hum.toFixed(1);
+        if (elValWater) elValWater.textContent = state.water.toFixed(1);
+        if (elValLevel) elValLevel.textContent = Math.round(state.level);
 
-        // Badges
+        // Eco banner pills
+        const pAir = document.getElementById('pillAir');
+        const pHum = document.getElementById('pillHum');
+        const pWater = document.getElementById('pillWater');
+        const pLevel = document.getElementById('pillWaterLevel');
+
+        if (pAir) pAir.textContent = `${state.air.toFixed(1)}°C`;
+        if (pHum) pHum.textContent = `${state.hum.toFixed(1)}%`;
+        if (pWater) pWater.textContent = `${state.water.toFixed(1)}°C`;
+        if (pLevel) pLevel.textContent = `${Math.round(state.level)}%`;
+
+        // Status Badges
         updateBadge('badgeAir', state.air, RANGES.air);
         updateBadge('badgeHum', state.hum, RANGES.hum);
         updateBadge('badgeWater', state.water, RANGES.water);
+        updateBadge('badgeLevel', state.level, RANGES.level);
+
+        // Water Tank Bar & Metrics
+        const tFill = document.getElementById('tankBarFill');
+        if (tFill) tFill.style.width = `${Math.min(Math.max(state.level, 0), 100)}%`;
+        const tPerc = document.getElementById('tankPercentText');
+        if (tPerc) tPerc.textContent = `${Math.round(state.level)}%`;
+        const tAdc = document.getElementById('tankAdcText');
+        if (tAdc) tAdc.textContent = `${state.waterRaw} / 4095`;
+
+        // Smart Microclimate & Agronomy Insights
+        const T = state.air;
+        const RH = state.hum;
+
+        // 1. VPD (Vapor Pressure Deficit)
+        const svp = 0.61078 * Math.exp((17.27 * T) / (T + 237.3));
+        const vpd = Math.max(0, svp * (1 - RH / 100));
+        const elVpd = document.getElementById('valVpd');
+        const descVpd = document.getElementById('descVpd');
+        if (elVpd) elVpd.textContent = vpd.toFixed(2);
+        if (descVpd) {
+          if (vpd >= 0.8 && vpd <= 1.2) descVpd.textContent = '✅ Optimal untuk laju transpirasi daun tanaman hidroponik.';
+          else if (vpd < 0.8) descVpd.textContent = '⚠️ VPD rendah (udara lembap), laju serapan nutrisi melambat.';
+          else descVpd.textContent = '🔔 VPD tinggi (udara kering), stomata daun berisiko menutup.';
+        }
+
+        // 2. Heat Index
+        const hi = 0.5 * (T + 61.0 + ((T - 68.0) * 1.2) + (RH * 0.094));
+        const elHi = document.getElementById('valHeatIndex');
+        if (elHi) elHi.textContent = (hi > 20 ? hi : T).toFixed(1);
+
+        // 3. Dew Point
+        const dew = T - ((100 - RH) / 5);
+        const elDew = document.getElementById('valDewPoint');
+        if (elDew) elDew.textContent = dew.toFixed(1);
+
+        // 4. Raw ADC
+        const elRaw = document.getElementById('valRawAdc');
+        if (elRaw) elRaw.textContent = state.waterRaw;
 
         updateEcoBanner();
         updatePumpUI();
@@ -1279,9 +1572,10 @@
 
       function updatePumpUI() {
         if (state.pumpMode === 'auto') {
-          if (state.water > state.pumpThreshold) {
+          // Logika Otomatisasi Pompa Air Pengisian:
+          if (state.level <= 25) {
             state.pumpStatus = true;
-          } else if (state.water <= state.pumpThreshold - 0.4) {
+          } else if (state.level >= 80) {
             state.pumpStatus = false;
           }
         } else if (state.pumpMode === 'manual-on') {
@@ -1290,7 +1584,6 @@
           state.pumpStatus = false;
         }
 
-        const pWidget = document.getElementById('pumpWidget');
         const pBadge = document.getElementById('pumpStateBadge');
         const pHint = document.getElementById('pumpHintText');
         const pPillText = document.getElementById('pillPumpText');
@@ -1303,18 +1596,17 @@
         }
 
         if (state.pumpStatus) {
-          if (pWidget) pWidget.classList.add('active');
           if (pBadge) {
             pBadge.className = 'pump-badge-state pump-badge-on';
-            pBadge.textContent = 'HIDUP (Memutar Air)';
+            pBadge.textContent = 'HIDUP (Sedang Mengisi)';
           }
-          if (pHint) pHint.innerHTML = `🔥 Suhu air hangat (&gt; ${state.pumpThreshold.toFixed(1)}°C). Pompa <strong>memutar air</strong> agar panas merata &amp; dingin.`;
+          if (pHint) pHint.innerHTML = `💧 Level air rendah (&le; 25%). Pompa relay <strong>aktif mengisi tandon air</strong>.`;
           if (pPillText) {
             pPillText.textContent = 'HIDUP';
             pPillText.style.color = '#38bdf8';
           }
           if (pSumVal) {
-            pSumVal.textContent = 'AKTIF (Sirkulasi)';
+            pSumVal.textContent = 'AKTIF (Mengisi)';
             pSumVal.style.color = '#38bdf8';
           }
           if (pSumIcon) {
@@ -1322,12 +1614,11 @@
             pSumIcon.style.color = '#38bdf8';
           }
         } else {
-          if (pWidget) pWidget.classList.remove('active');
           if (pBadge) {
             pBadge.className = 'pump-badge-state pump-badge-off';
             pBadge.textContent = 'STANDBY (Mati)';
           }
-          if (pHint) pHint.textContent = `❄️ Suhu air aman (≤ ${state.pumpThreshold.toFixed(1)}°C). Pompa standby.`;
+          if (pHint) pHint.textContent = (state.level >= 80) ? '✅ Air tandon penuh (≥ 80%). Pompa standby.' : 'Level air tandon stabil dalam batas aman.';
           if (pPillText) {
             pPillText.textContent = 'STANDBY';
             pPillText.style.color = '#64748b';
@@ -1350,7 +1641,7 @@
         if (val >= cfg.idealMin && val <= cfg.idealMax) {
           el.classList.add('status-optimal');
           el.textContent = 'Optimal';
-        } else if ((val >= cfg.idealMin - 2 && val < cfg.idealMin) || (val > cfg.idealMax && val <= cfg.idealMax + 3)) {
+        } else if ((val >= cfg.idealMin - 5 && val < cfg.idealMin) || (val > cfg.idealMax && val <= cfg.idealMax + 5)) {
           el.classList.add('status-warning');
           el.textContent = 'Waspada';
         } else {
@@ -1372,29 +1663,25 @@
         if (state.water >= RANGES.water.idealMin && state.water <= RANGES.water.idealMax) optimalCount++;
         else notes.push(state.water > RANGES.water.idealMax ? 'Air hangat' : 'Air dingin');
 
+        if (state.level >= RANGES.level.idealMin && state.level <= RANGES.level.idealMax) optimalCount++;
+        else if (state.level < RANGES.level.idealMin) notes.push('Air tandon menipis');
+
         const title = document.getElementById('ecoTitle');
         const desc = document.getElementById('ecoDesc');
         const icon = document.getElementById('ecoIcon');
-        const statusText = document.getElementById('ecoStatusText');
 
-        if (optimalCount === 3) {
-          icon.textContent = '✅';
-          title.textContent = 'Kondisi Hidroponik Optimal';
-          desc.textContent = 'Semua parameter lingkungan dan nutrisi air berada pada batas ideal tanaman.';
-          statusText.textContent = 'Optimal Prima';
-          statusText.style.color = '#38bdf8';
+        if (optimalCount >= 3) {
+          if (icon) icon.textContent = '✅';
+          if (title) title.textContent = 'Kondisi Hidroponik Optimal';
+          if (desc) desc.textContent = 'Semua parameter lingkungan mikro dan larutan nutrisi air berada pada batas ideal tanaman.';
         } else if (optimalCount >= 2) {
-          icon.textContent = '⚠️';
-          title.textContent = 'Kondisi Cukup Baik';
-          desc.textContent = `Perhatian kecil: ${notes.join(', ')}.`;
-          statusText.textContent = 'Cukup Baik';
-          statusText.style.color = '#fbbf24';
+          if (icon) icon.textContent = '⚠️';
+          if (title) title.textContent = 'Kondisi Cukup Baik';
+          if (desc) desc.textContent = `Perhatian kecil: ${notes.join(', ')}.`;
         } else {
-          icon.textContent = '🔔';
-          title.textContent = 'Perlu Penyesuaian Segera';
-          desc.textContent = `Peringatan: ${notes.join(', ')}. Lakukan tindakan aerasi atau sirkulasi.`;
-          statusText.textContent = 'Perlu Tindakan';
-          statusText.style.color = '#f87171';
+          if (icon) icon.textContent = '🔔';
+          if (title) title.textContent = 'Perlu Penyesuaian Segera';
+          if (desc) desc.textContent = `Peringatan: ${notes.join(', ')}. Lakukan penyesuaian tandon atau ventilasi.`;
         }
       }
 
@@ -1405,9 +1692,15 @@
         const avgHum = (state.history.reduce((a, b) => a + b.hum, 0) / len).toFixed(1);
         const avgWater = (state.history.reduce((a, b) => a + b.water, 0) / len).toFixed(1);
 
-        document.getElementById('avgAir').textContent = `${avgAir} °C`;
-        document.getElementById('avgHum').textContent = `${avgHum} %`;
-        document.getElementById('avgWater').textContent = `${avgWater} °C`;
+        const elAvgAir = document.getElementById('avgAir');
+        const elAvgHum = document.getElementById('avgHum');
+        const elAvgWater = document.getElementById('avgWater');
+        const elWaterVal = document.getElementById('waterLevelVal');
+
+        if (elAvgAir) elAvgAir.textContent = `${avgAir} °C`;
+        if (elAvgHum) elAvgHum.textContent = `${avgHum} %`;
+        if (elAvgWater) elAvgWater.textContent = `${avgWater} °C`;
+        if (elWaterVal) elWaterVal.textContent = `${Math.round(state.level)} % (ADC: ${state.waterRaw})`;
       }
 
       // --- Chart.js Realtime Telemetry ---
@@ -1453,6 +1746,18 @@
                 fill: true,
                 pointRadius: 2,
                 yAxisID: 'yTemp'
+              },
+              {
+                label: 'Level Air (%)',
+                data: [],
+                borderColor: '#38bdf8',
+                borderDash: [5, 4],
+                backgroundColor: 'rgba(56, 189, 248, 0.05)',
+                borderWidth: 2,
+                tension: 0.35,
+                fill: false,
+                pointRadius: 2,
+                yAxisID: 'yHum'
               }
             ]
           },
@@ -1485,20 +1790,20 @@
               },
               yHum: {
                 position: 'right',
-                min: 35,
+                min: 0,
                 max: 100,
                 grid: { display: false },
-                ticks: { color: '#818cf8', font: { family: "'JetBrains Mono', monospace", size: 10 }, stepSize: 15 }
+                ticks: { color: '#818cf8', font: { family: "'JetBrains Mono', monospace", size: 10 }, stepSize: 20 }
               }
             }
           }
         });
       }
 
-      function pushRecord(a, h, w) {
+      function pushRecord(a, h, w, lvl = state.level, raw = state.waterRaw) {
         const now = new Date();
         const t = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
-        state.history.push({ time: t, iso: now.toISOString(), air: a, hum: h, water: w });
+        state.history.push({ time: t, iso: now.toISOString(), air: a, hum: h, water: w, level: lvl, raw: raw });
         if (state.history.length > state.maxPoints) state.history.shift();
 
         if (chart) {
@@ -1506,6 +1811,7 @@
           chart.data.datasets[0].data.push(a);
           chart.data.datasets[1].data.push(h);
           chart.data.datasets[2].data.push(w);
+          chart.data.datasets[3].data.push(lvl);
           if (chart.data.labels.length > state.maxPoints) {
             chart.data.labels.shift();
             chart.data.datasets.forEach(d => d.data.shift());
@@ -1524,13 +1830,15 @@
           const a = +(25.8 + Math.sin(i / 2) * 0.7).toFixed(1);
           const h = +(70.2 + Math.cos(i / 2) * 1.8).toFixed(1);
           const w = +(23.3 + Math.sin(i / 3) * 0.4).toFixed(1);
+          const l = Math.round(75 + Math.sin(i / 2) * 3);
 
-          state.history.push({ time: t, iso: past.toISOString(), air: a, hum: h, water: w });
+          state.history.push({ time: t, iso: past.toISOString(), air: a, hum: h, water: w, level: l, raw: 2400 });
           if (chart) {
             chart.data.labels.push(t);
             chart.data.datasets[0].data.push(a);
             chart.data.datasets[1].data.push(h);
             chart.data.datasets[2].data.push(w);
+            chart.data.datasets[3].data.push(l);
           }
         }
         if (chart) chart.update();
@@ -1547,42 +1855,48 @@
         state.air = Math.min(Math.max(+(state.air + da).toFixed(1), 18), 36);
         state.hum = Math.min(Math.max(+(state.hum + dh).toFixed(1), 45), 90);
 
-        // Fisika Sirkulasi Pompa Air:
-        // Jika pompa aktif/hidup, air bersirkulasi mendinginkan suhu air menuju titik ideal (22.0°C - 23.5°C)
-        // Jika pompa mati dan suhu udara panas, suhu air perlahan merangkak naik
         if (state.pumpStatus) {
-          const coolingRate = 0.22 + Math.random() * 0.12;
-          state.water = Math.max(22.0, +(state.water - coolingRate).toFixed(1));
+          state.level = Math.min(100, +(state.level + 1.8).toFixed(1));
+          if (state.level >= 80) state.pumpStatus = false;
         } else {
-          // Suhu air perlahan naik jika di atas 24°C atau berfluktuasi
-          const warmingRate = (Math.random() - 0.35) * 0.22;
-          state.water = Math.min(Math.max(+(state.water + warmingRate).toFixed(1), 16), 31);
+          state.level = Math.max(0, +(state.level - 0.3).toFixed(1));
+          if (state.level <= 25) state.pumpStatus = true;
         }
 
-        pushRecord(state.air, state.hum, state.water);
+        state.waterRaw = Math.round(1200 + (state.level / 100) * 1800);
+        pushRecord(state.air, state.hum, state.water, state.level, state.waterRaw);
       }
 
       function startSim() {
         if (timer) clearInterval(timer);
         timer = setInterval(stepSim, 2500);
         state.isSimulating = true;
-        document.getElementById('simBtnIcon').textContent = '⏸️';
-        document.getElementById('simBtnText').textContent = 'Jeda';
-        document.getElementById('liveText').textContent = 'LIVE';
+        const sIcon = document.getElementById('simBtnIcon');
+        const sText = document.getElementById('simBtnText');
+        const lText = document.getElementById('liveText');
+        if (sIcon) sIcon.textContent = '⏸️';
+        if (sText) sText.textContent = 'Jeda';
+        if (lText && lText.textContent !== 'LIVE CLOUD') lText.textContent = 'LIVE';
       }
 
       function stopSim() {
         if (timer) clearInterval(timer);
         state.isSimulating = false;
-        document.getElementById('simBtnIcon').textContent = '▶️';
-        document.getElementById('simBtnText').textContent = 'Lanjut';
-        document.getElementById('liveText').textContent = 'JEDA';
+        const sIcon = document.getElementById('simBtnIcon');
+        const sText = document.getElementById('simBtnText');
+        const lText = document.getElementById('liveText');
+        if (sIcon) sIcon.textContent = '▶️';
+        if (sText) sText.textContent = 'Lanjut';
+        if (lText && lText.textContent !== 'LIVE CLOUD') lText.textContent = 'JEDA';
       }
 
-      document.getElementById('btnSimToggle').addEventListener('click', () => {
-        if (state.isSimulating) stopSim();
-        else startSim();
-      });
+      const btnSim = document.getElementById('btnSimToggle');
+      if (btnSim) {
+        btnSim.addEventListener('click', () => {
+          if (state.isSimulating) stopSim();
+          else startSim();
+        });
+      }
 
       // --- Pump Manual/Auto Toggle Control ---
       const btnPumpToggle = document.getElementById('btnPumpToggle');
@@ -1601,42 +1915,53 @@
 
       // --- Modal Sliders ---
       const modal = document.getElementById('settingsModal');
-      document.getElementById('btnOpenModal').addEventListener('click', () => modal.classList.add('active'));
-      document.getElementById('btnCloseModal').addEventListener('click', () => modal.classList.remove('active'));
-      modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('active'); });
+      const btnOpenM = document.getElementById('btnOpenModal');
+      const btnCloseM = document.getElementById('btnCloseModal');
+      if (btnOpenM) btnOpenM.addEventListener('click', () => modal.classList.add('active'));
+      if (btnCloseM) btnCloseM.addEventListener('click', () => modal.classList.remove('active'));
+      if (modal) modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('active'); });
 
       const sAir = document.getElementById('sliderAir');
       const sHum = document.getElementById('sliderHum');
       const sWater = document.getElementById('sliderWater');
+      const sLevel = document.getElementById('sliderLevel');
       const sThresh = document.getElementById('sliderThresh');
       const lblThresh = document.getElementById('lblSliderThresh');
 
-      sAir.addEventListener('input', (e) => document.getElementById('lblSliderAir').textContent = `${parseFloat(e.target.value).toFixed(1)} °C`);
-      sHum.addEventListener('input', (e) => document.getElementById('lblSliderHum').textContent = `${e.target.value} %`);
-      sWater.addEventListener('input', (e) => document.getElementById('lblSliderWater').textContent = `${parseFloat(e.target.value).toFixed(1)} °C`);
+      if (sAir) sAir.addEventListener('input', (e) => document.getElementById('lblSliderAir').textContent = `${parseFloat(e.target.value).toFixed(1)} °C`);
+      if (sHum) sHum.addEventListener('input', (e) => document.getElementById('lblSliderHum').textContent = `${e.target.value} %`);
+      if (sWater) sWater.addEventListener('input', (e) => document.getElementById('lblSliderWater').textContent = `${parseFloat(e.target.value).toFixed(1)} °C`);
+      if (sLevel) sLevel.addEventListener('input', (e) => document.getElementById('lblSliderLevel').textContent = `${e.target.value} %`);
       if (sThresh && lblThresh) {
         sThresh.addEventListener('input', (e) => lblThresh.textContent = `${parseFloat(e.target.value).toFixed(1)} °C`);
       }
 
-      document.getElementById('btnApplySlider').addEventListener('click', () => {
-        stopSim();
-        state.air = parseFloat(sAir.value);
-        state.hum = parseFloat(sHum.value);
-        state.water = parseFloat(sWater.value);
-        if (sThresh) {
-          state.pumpThreshold = parseFloat(sThresh.value);
-        }
-        pushRecord(state.air, state.hum, state.water);
-        modal.classList.remove('active');
-      });
+      const btnApplySlider = document.getElementById('btnApplySlider');
+      if (btnApplySlider) {
+        btnApplySlider.addEventListener('click', () => {
+          stopSim();
+          if (sAir) state.air = parseFloat(sAir.value);
+          if (sHum) state.hum = parseFloat(sHum.value);
+          if (sWater) state.water = parseFloat(sWater.value);
+          if (sLevel) {
+            state.level = parseInt(sLevel.value);
+            state.waterRaw = Math.round(1200 + (state.level / 100) * 1800);
+          }
+          if (sThresh) state.pumpThreshold = parseFloat(sThresh.value);
+          pushRecord(state.air, state.hum, state.water, state.level, state.waterRaw);
+          modal.classList.remove('active');
+        });
+      }
 
-      // --- Chart Filter Chips ---
+      // --- Chart Filter Chips (All 4 Parameters) ---
       [
         { id: 'chipAir', idx: 0 },
         { id: 'chipHum', idx: 1 },
-        { id: 'chipWater', idx: 2 }
+        { id: 'chipWater', idx: 2 },
+        { id: 'chipLevel', idx: 3 }
       ].forEach(({ id, idx }) => {
         const btn = document.getElementById(id);
+        if (!btn) return;
         btn.addEventListener('click', () => {
           if (!chart) return;
           const vis = chart.isDatasetVisible(idx);
@@ -1647,22 +1972,25 @@
       });
 
       // --- CSV Download ---
-      document.getElementById('btnExportCSV').addEventListener('click', () => {
-        if (state.history.length === 0) return;
-        let csv = 'Waktu,Waktu_ISO,Suhu_Udara_C,Kelembapan_Persen,Suhu_Air_C,Status_Pompa\n';
-        state.history.forEach(r => {
-          const pumpStr = (r.water > state.pumpThreshold) ? 'HIDUP' : 'STANDBY';
-          csv += `${r.time},"${r.iso}",${r.air},${r.hum},${r.water},${pumpStr}\n`;
+      const btnExport = document.getElementById('btnExportCSV');
+      if (btnExport) {
+        btnExport.addEventListener('click', () => {
+          if (state.history.length === 0) return;
+          let csv = 'Waktu,Waktu_ISO,Suhu_Udara_C,Kelembapan_Persen,Suhu_Air_C,Level_Air_Persen,ADC_Raw,Status_Pompa\n';
+          state.history.forEach(r => {
+            const pumpStr = (r.level <= 25) ? 'HIDUP' : 'STANDBY';
+            csv += `${r.time},"${r.iso}",${r.air},${r.hum},${r.water},${r.level || 75},${r.raw || 2400},${pumpStr}\n`;
+          });
+          const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `log_telemetri_hidroponik_${Date.now()}.csv`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
         });
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `log_telemetri_hidroponik_${Date.now()}.csv`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-      });
+      }
 
       // Global ESP32 API Hook
       window.updateHydroponicData = (a, h, w, pump = null, level = null, raw = null) => {
@@ -1671,19 +1999,16 @@
         state.hum = parseFloat(h);
         state.water = parseFloat(w);
         if (level !== null && level !== undefined) {
-          state.waterLevel = parseInt(level);
-          const pL = document.getElementById('pillWaterLevel');
-          if (pL) pL.textContent = `${state.waterLevel}%`;
-          const wV = document.getElementById('waterLevelVal');
-          if (wV) {
-            wV.textContent = `${state.waterLevel} %` + (raw !== null && raw !== undefined ? ` (ADC: ${raw})` : '');
-          }
+          state.level = parseInt(level);
+        }
+        if (raw !== null && raw !== undefined) {
+          state.waterRaw = parseInt(raw);
         }
         if (pump !== null) {
           state.pumpMode = 'hardware';
           state.pumpStatus = (pump === true || pump === 'ON' || pump === 1 || pump === '1');
         }
-        pushRecord(state.air, state.hum, state.water);
+        pushRecord(state.air, state.hum, state.water, state.level, state.waterRaw);
       };
 
       // Realtime Telemetry Poller dari Server Flask (ESP32)
